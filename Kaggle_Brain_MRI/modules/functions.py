@@ -13,6 +13,8 @@ import random
 import numpy as np
 import torch
 import torch.nn as nn
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from skimage.io import imread
 from torch.utils.data import Dataset
@@ -43,7 +45,7 @@ class BrainSegmentationDataset(Dataset):
         image_size=256,
         subset="train",
         random_sampling=True,
-        validation_cases=10,
+        validation_cases=1,#10
         seed=42,
     ):
         assert subset in ["all", "train", "validation"]
@@ -245,13 +247,12 @@ class HorizontalFlip(object):
 
         return image, mask
     
-batch_size=2
 
-def datasets():
+def datasets(images_path):
     aug_scale = 0.05
     aug_angle =15
     image_size = 256
-    images= "C:/Users/alber/Bureau/Development/Data/Images_data/MRI/kaggle_3m"
+    images= images_path
     train = BrainSegmentationDataset(
         images_dir=images,
         subset="train",
@@ -265,8 +266,9 @@ def datasets():
         random_sampling=False,
     )
     return train, valid
-def data_loaders():
-    dataset_train, dataset_valid = datasets()
+
+def data_loaders(images_path,batch_size):
+    dataset_train, dataset_valid = datasets(images_path)
 
     def worker_init(worker_id):
         np.random.seed(42 + worker_id)
@@ -276,15 +278,15 @@ def data_loaders():
         batch_size=batch_size,
         shuffle=True,
         drop_last=True,
-        num_workers=1,
-        worker_init_fn=worker_init,
+        #num_workers=1,
+        #worker_init_fn=worker_init,
     )
     loader_valid = DataLoader(
         dataset_valid,
         batch_size=batch_size,
         drop_last=False,
-        num_workers=1,
-        worker_init_fn=worker_init,
+        #num_workers=1,
+        #worker_init_fn=worker_init,
     )
 
     return loader_train, loader_valid
@@ -471,7 +473,6 @@ def dsc_distribution(volumes):
         dsc_dict[p] = dsc(y_pred, y_true, lcc=False)
     return dsc_dict
 
-dsc_dist = dsc_distribution(volumes)
 
 
 

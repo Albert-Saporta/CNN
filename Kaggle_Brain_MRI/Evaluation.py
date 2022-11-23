@@ -9,6 +9,7 @@ from modules import *
 from skimage.io import imsave
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+device = torch.device("cuda")
 
 phase = "valid"
 with torch.set_grad_enabled(False):

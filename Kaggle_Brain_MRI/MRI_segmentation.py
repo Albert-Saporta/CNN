@@ -11,16 +11,20 @@ from modules import *
 #%%% Hyperparameters
 
 n_epochs= 2#100
-vis_freq = 10
+vis_freq = 1
 vis_images = 2
-device = torch.device("cpu" if not torch.cuda.is_available() else "cuda:0")
+device = torch.device("cuda")
 dsc_loss = DiceLoss()
+batch_size=1
 
 #%%% Data
-loader_train, loader_valid = data_loaders()
+images_path="C:/Users/alber/Bureau/Development/Data/Images_data/MRI/subset"#kaggle_3m"
+loader_train, loader_valid = data_loaders(images_path,batch_size)
 loaders = {"train": loader_train, "valid": loader_valid}
+print('data loaded')
 
 #%%% models
+#if __name__ == '__main__':
 unet = UNet2D(in_channels=BrainSegmentationDataset.in_channels, out_channels=BrainSegmentationDataset.out_channels)
 unet.to(device)
 optimizer = optim.Adam(unet.parameters(), lr=0.001)
@@ -36,6 +40,8 @@ loss_train = []
 loss_valid = []
 
 step = 0
+print(' ')
+print('Training')
 
 for epoch in range(n_epochs):
     for phase in ["train", "valid"]:
@@ -72,7 +78,7 @@ for epoch in range(n_epochs):
                     validation_true.extend(
                         [y_true_np[s] for s in range(y_true_np.shape[0])]
                     )
-                    if (epoch % vis_freq == 0) or (epoch == epochs - 1):
+                    if (epoch % vis_freq == 0) or (epoch == n_epochs - 1):
                         if i * batch_size < vis_images:
                             tag = "image/{}".format(i)
                             num_images = vis_images - i * batch_size
@@ -83,11 +89,11 @@ for epoch in range(n_epochs):
                     optimizer.step()
 
             if phase == "train" and (step + 1) % 10 == 0:
-                print(f"step : {step}  ---  loss train : {loss_train}")
+                #print(f"step : {step}  ---  loss train : {loss_train}")
                 loss_train = []
 
         if phase == "valid":
-            print(f"step : {step}  ---  loss train : {loss_valid}")
+            #print(f"step : {step}  ---  loss train : {loss_valid}")
             mean_dsc = np.mean(
                 dsc_per_volume(
                     validation_pred,
@@ -95,7 +101,7 @@ for epoch in range(n_epochs):
                     loader_valid.dataset.patient_slice_index,
                 )
             )
-            print(f"step : {step}  ---  mean_dsc : {mean_dsc}")
+            #print(f"step : {step}  ---  mean_dsc : {mean_dsc}")
             if mean_dsc > best_validation_dsc:
                 best_validation_dsc = mean_dsc
                 torch.save(unet.state_dict(), "unet.pt")
