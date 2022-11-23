@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-#%%
+#%% 2D Unet (kaglle brain MRI)
 
 class UNet2D(nn.Module):
 
@@ -105,3 +105,170 @@ class UNet2D(nn.Module):
                 ]
             )
         )
+
+#%% CNN for radiomics (McMedHacks 7.2)
+
+class RadiomicsCNN(nn.Module):
+    
+    # RadiomicsCNN Architecture
+    # 
+    # dosemap and CT scans --> conv --> normalization --> relu --> max pooling --> 
+    #       flattening --> 
+    # Adding clinical path
+    #       FC reduce X to the size of X_clinical --> normalize --> rrelu -->
+    #       X + X_clinic --> 
+    #       FC --> normalize --> rrelu --> 
+    #       FC --> normalize --> sigmoid
+    
+
+
+
+    def __init__(self):
+
+        super(RadiomicsCNN, self).__init__()
+        
+        ks    = 10
+        pool  = 5
+        
+        # Convolution layers
+        n_in  = 2
+        n_out = 1
+        self.conv1 = nn.Conv3d(in_channels = n_in, out_channels = n_out, kernel_size = ks)
+        self.conv1_bn = nn.BatchNorm3d(n_out)
+    
+        
+        # Pooling layers
+        self.maxpool1 = nn.MaxPool3d(kernel_size = pool)
+        
+        # Flattening
+        self.flat = nn.Flatten()
+        
+        # Fully-conneceted layers 
+        
+        # FC 1: make the size of x equal to the of the clinical path
+
+        
+        I1, P, K, S = dim1, 0, ks, 1
+        O1 = (I1 - K + 2*P) / S + 1 
+        O1 = (O1 - pool)/pool + 1
+        O1 = int(O1)
+        
+        I2 = dim2
+        O2 = (I2 - K + 2*P) / S + 1 
+        O2 = (O2 - pool)/pool + 1
+        O2 = int(O2)
+        
+        I3 = dim3
+        O3 = (I3 - K + 2*P) / S + 1 
+        O3 = (O3 - pool)/pool + 1
+        O3 = int(O3)
+
+        self.fc1 = nn.Linear(O1*O2*O3, n_cln)
+        self.fc1_bn = nn.BatchNorm1d(n_cln)
+        
+        # FC 2: expand the features after concatination
+        L_in = int ( 2 * n_cln ) 
+        L_out = int ( L_in)
+        self.fc2 = nn.Linear(L_in, L_out)
+        self.fc2_bn = nn.BatchNorm1d(L_out)
+        
+        # FC 3: make prediction
+        self.fc3 = nn.Linear(L_out, 1)
+        self.fc3_bn = nn.BatchNorm1d(1)
+        
+
+
+    def forward(self, x_dos, x_cts, x_cln):
+        
+        
+        # Concatenate dosimetric and clinical features
+        x = torch.cat((x_dos, x_cts), dim=1)
+        
+        # average pooling
+        x = self.maxpool1(  F.rrelu(  self.conv1_bn(  self.conv1(x)  )  )  )   
+        
+        x = self.flat(x)
+        
+        # FC layer to reduce x to the size of the clinical path
+        x = F.rrelu( self.fc1_bn( self.fc1(x) ) )
+
+
+        # Concatinate clinical variables
+        x_cln = x_cln.squeeze(1)
+        x_final = torch.cat((x, x_cln), dim=1)
+
+        # Last FCs
+        x_final = F.rrelu  ( self.fc2_bn( self.fc2(x_final) ) )
+        x_final = torch.sigmoid( self.fc3_bn( self.fc3(x_final) ) )
+
+        return x_final.squeeze()
+
+class RadiomicsDVH(nn.Module):
+    # Hyperparameters:
+    #   kernel size of the concolution layer     (1)
+    #   size of the average pooling              (1)
+
+    def __init__(self, ks, pool):
+        super(RadiomicsDVH, self).__init__()
+        
+        
+        # Convolution layers
+        n_in  = 1
+        n_out = 1 
+        self.conv1 = nn.Conv1d(in_channels = n_in, out_channels = n_out, kernel_size = ks)
+        self.conv1_bn = nn.BatchNorm1d(n_out)
+    
+        
+        # Pooling layers
+        self.avgpool1 = nn.AvgPool1d(kernel_size = pool)
+        
+        # Flattening
+        self.flat = nn.Flatten()
+        
+        
+        # Fully-conneceted layers 
+        
+        # --- FC 1: make the size of x equal to the of the clinical path
+        n_cln = X_cln.shape[-1]
+    
+        I, P, K, S = X_dvh.shape[1], 0, ks, 1
+        O = (I - K + 2*P) / S + 1 
+        O = (O - pool)/pool + 1
+        
+        O = int(O)
+
+        self.fc1 = nn.Linear(O, n_cln)
+        self.fc1_bn = nn.BatchNorm1d(n_cln)
+        
+        # --- FC 2: Allow features to interact
+        L_in = int ( 2 * n_cln ) # since the dvh and clinical paths are now equal --> 2 X
+        L_out = int ( L_in )
+        self.fc2 = nn.Linear(L_in, L_out)
+        self.fc2_bn = nn.BatchNorm1d(L_out)
+        
+        # --- FC 3: make prediction
+        self.fc3 = nn.Linear(L_out, 1)
+        self.fc3_bn = nn.BatchNorm1d(1)
+        
+
+    def forward(self, X_dvh, X_cln):
+        
+        # average pooling
+        x = self.avgpool1(  F.rrelu(  self.conv1_bn(  self.conv1(X_dvh)  )  )  )  
+        
+        x = self.flat(x)
+
+ 
+        # FC layer to reduce x to the size of the clinical path
+        x = F.relu ( self.fc1_bn( self.fc1(x) ) )
+       
+
+        # Concatinate clinical variables
+        X_cln = X_cln.squeeze(1)
+        x_fin = torch.cat((x, X_cln), dim=1)
+
+        # Last FCs
+        x_fin = F.rrelu  ( self.fc2_bn( self.fc2(x_fin) ) )
+        x_fin = torch.sigmoid( self.fc3_bn( self.fc3(x_fin) ) )
+
+        return x_fin.squeeze()
