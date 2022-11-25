@@ -4,10 +4,9 @@ Created on Wed Nov 23 14:58:06 2022
 
 @author: alber
 """
-!pip install SimpleITK
-!pip install smt
-from modules import *
+#!pip install --no-cache-dir smt
 
+from modules import *
 import numpy as np
 import pandas as pd 
 import seaborn as sns
@@ -17,7 +16,7 @@ from os import listdir
 from os.path import isfile, join
 from scipy import ndimage
 from scipy.stats import mannwhitneyu
-from smt.sampling_methods import FullFactorial 
+#from smt.sampling_methods import FullFactorial 
 
 
 from sklearn.model_selection import train_test_split,StratifiedKFold

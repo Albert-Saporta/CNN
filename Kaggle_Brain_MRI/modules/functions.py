@@ -45,7 +45,7 @@ class BrainSegmentationDataset(Dataset):
         image_size=256,
         subset="train",
         random_sampling=True,
-        validation_cases=10,
+        validation_cases=2,
         seed=42,
     ):
         assert subset in ["all", "train", "validation"]
@@ -185,17 +185,18 @@ class Scale(object):
 
         image = rescale(
             image,
-            (scale, scale),
-            multichannel=True,
+            #(scale, scale),
+            scale,
+            #multichannel=True,
             preserve_range=True,
             mode="constant",
             anti_aliasing=False,
         )
         mask = rescale(
             mask,
-            (scale, scale),
+            scale,
             order=0,
-            multichannel=True,
+            #multichannel=True,
             preserve_range=True,
             mode="constant",
             anti_aliasing=False,
@@ -291,15 +292,7 @@ def data_loaders(images_path,batch_size):
 
     return loader_train, loader_valid
 
-"""
-epochs= 100
-vis_freq = 10
-vis_images = 2
-device = torch.device("cpu" if not torch.cuda.is_available() else "cuda:0")
 
-loader_train, loader_valid = data_loaders()
-loaders = {"train": loader_train, "valid": loader_valid}
-"""
 
 #%% Image preprocessing
 
@@ -424,14 +417,16 @@ class DiceLoss(nn.Module):
         self.smooth = 1.0
 
     def forward(self, y_pred, y_true):
-        assert y_pred.size() == y_true.size()
+        #assert y_pred.size() == y_true.size()
         y_pred = y_pred[:, 0].contiguous().view(-1)
         y_true = y_true[:, 0].contiguous().view(-1)
         intersection = (y_pred * y_true).sum()
-        dsc = (2. * intersection + self.smooth) / (
+        dsc = (2.0 * intersection + self.smooth) / (
             y_pred.sum() + y_true.sum() + self.smooth
-        )
-        return 1. - dsc
+        )                
+        print("tessssttt",y_true, y_true.sum().item())
+
+        return 1.0 - dsc
     
 def dsc_per_volume(validation_pred, validation_true, patient_slice_index):
     dsc_list = []

@@ -11,14 +11,13 @@ pth_file_name="unet_kaggle_MRI"
 #%%% Hyperparameters
 
 n_epochs= 100
-vis_freq = 10
+vis_freq = 2
 vis_images = 2
 device = torch.device("cuda")
-dsc_loss = DiceLoss()
-batch_size=2
+batch_size=1
 
 #%%% Data
-images_path="C:/Users/alber/Bureau/Development/Data/Images_data/MRI/subset"#"kaggle_3m"
+images_path="C:/Users/alber/Bureau/Development/Data/Images_data/MRI/small_subset"#"kaggle_3m"
 loader_train, loader_valid = data_loaders(images_path,batch_size)
 loaders = {"train": loader_train, "valid": loader_valid}
 print('data loaded')
@@ -36,6 +35,7 @@ optimizer = optim.Adam(unet.parameters(), lr=0.001)
 
 print(' ')
 print('Training')
+dsc_loss = DiceLoss()
 
 best_validation_dsc = 0.0
 loss_train = []
@@ -50,11 +50,10 @@ for epoch in range(n_epochs):
 
         validation_pred = []
         validation_true = []
-        loop = tqdm(loaders[phase], leave=True)
+        loop = tqdm(loaders[phase])
         for i, data in enumerate(loop):
             if phase == "train":
-                loop.set_description(f'Epoch {epoch+1}/{n_epochs}')
-                #loop.set_postfix(loss=loss.item())
+                #loop.set_description(f'Epoch {epoch+1}/{n_epochs}')
 
                 step += 1
 
@@ -65,10 +64,14 @@ for epoch in range(n_epochs):
 
             with torch.set_grad_enabled(phase == "train"):
                 y_pred = unet(x)
+                loss = dsc_loss(y_pred, y_true) 
 
-                loss = dsc_loss(y_pred, y_true)
+                #loop.set_postfix(training_loss=loss.item())
+
                 if phase == "valid":
                     loss_valid.append(loss.item())
+                    #loop.set_postfix(validation_loss=loss.item())
+
                     y_pred_np = y_pred.detach().cpu().numpy()
                     validation_pred.extend(
                         [y_pred_np[s] for s in range(y_pred_np.shape[0])]
