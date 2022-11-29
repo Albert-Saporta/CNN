@@ -4,21 +4,21 @@ Created on Wed Nov 23 11:18:44 2022
 
 @author: alber
 """
-#!pip3 install torch torchvision torchaudio
+#!pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
 from modules import *
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+#os.environ['KMP_DUPLICATE_LIB_OK']='True'
 #%% Initialization
-pth_file_name="unet_kaggle_MRI"
+pth_file_name="unet_kaggle_MRI29"
 #%%% Hyperparameters
 
 n_epochs= 100
 vis_freq = 10
 vis_images = 2
-device = torch.device("cpu")
+device = torch.device("cuda")
 batch_size=2
 
 #%%% Data
-images_path="C:/Users/alber/Bureau/Development/Data/Images_data/MRI/kaggle_3m"
+images_path="C:/Users/alber/Bureau/Development/Data/Images_data/MRI/Kaggle_3m"
 loader_train, loader_valid = data_loaders(images_path,batch_size)
 loaders = {"train": loader_train, "valid": loader_valid}
 print('data loaded')
