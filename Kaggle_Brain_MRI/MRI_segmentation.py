@@ -4,20 +4,21 @@ Created on Wed Nov 23 11:18:44 2022
 
 @author: alber
 """
-
+#!pip3 install torch torchvision torchaudio
 from modules import *
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 #%% Initialization
 pth_file_name="unet_kaggle_MRI"
 #%%% Hyperparameters
 
 n_epochs= 100
-vis_freq = 2
+vis_freq = 10
 vis_images = 2
-device = torch.device("cuda")
-batch_size=1
+device = torch.device("cpu")
+batch_size=2
 
 #%%% Data
-images_path="C:/Users/alber/Bureau/Development/Data/Images_data/MRI/small_subset"#"kaggle_3m"
+images_path="C:/Users/alber/Bureau/Development/Data/Images_data/MRI/kaggle_3m"
 loader_train, loader_valid = data_loaders(images_path,batch_size)
 loaders = {"train": loader_train, "valid": loader_valid}
 print('data loaded')
@@ -53,12 +54,13 @@ for epoch in range(n_epochs):
         loop = tqdm(loaders[phase])
         for i, data in enumerate(loop):
             if phase == "train":
-                #loop.set_description(f'Epoch {epoch+1}/{n_epochs}')
+                loop.set_description(f'Epoch {epoch+1}/{n_epochs}')
 
                 step += 1
 
             x, y_true = data
             x, y_true = x.to(device), y_true.to(device)
+            #print("tessssttt", torch.max(y_true))
 
             optimizer.zero_grad()
 
@@ -66,7 +68,7 @@ for epoch in range(n_epochs):
                 y_pred = unet(x)
                 loss = dsc_loss(y_pred, y_true) 
 
-                #loop.set_postfix(training_loss=loss.item())
+                loop.set_postfix(training_loss=loss.item())
 
                 if phase == "valid":
                     loss_valid.append(loss.item())

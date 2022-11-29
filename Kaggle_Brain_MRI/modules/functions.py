@@ -8,6 +8,7 @@ Created on Wed Nov 23 11:06:56 2022
 
 
 import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import random
 
 import numpy as np
@@ -28,6 +29,7 @@ import numpy as np
 from medpy.filter.binary import largest_connected_component
 from skimage.exposure import rescale_intensity
 from skimage.transform import resize
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
 #%% Data  Class and function
@@ -45,7 +47,7 @@ class BrainSegmentationDataset(Dataset):
         image_size=256,
         subset="train",
         random_sampling=True,
-        validation_cases=2,
+        validation_cases=10,
         seed=42,
     ):
         assert subset in ["all", "train", "validation"]
@@ -104,6 +106,8 @@ class BrainSegmentationDataset(Dataset):
         print("normalizing {} volumes...".format(subset))
         # normalize channel-wise
         self.volumes = [(normalize_volume(v), m) for v, m in self.volumes]
+        #print("bugg",self.volumes)
+
 
         # probabilities for sampling slices based on masks
         self.slice_weights = [m.sum(axis=-1).sum(axis=-1) for v, m in self.volumes]
@@ -148,6 +152,7 @@ class BrainSegmentationDataset(Dataset):
 
         if self.transform is not None:
             image, mask = self.transform((image, mask))
+        #print("bugg",np.max(image) ,np.max(mask))
 
         # fix dimensions (C, H, W)
         image = image.transpose(2, 0, 1)
@@ -155,8 +160,11 @@ class BrainSegmentationDataset(Dataset):
 
         image_tensor = torch.from_numpy(image.astype(np.float32))
         mask_tensor = torch.from_numpy(mask.astype(np.float32))
+        mask_tensor=mask_tensor/255.0
 
         # return tensors
+        #print("bugg",torch.max(image_tensor) ,torch.max(mask_tensor))
+
         return image_tensor, mask_tensor
     
 def transforms(scale=None, angle=None, flip_prob=None):
@@ -373,6 +381,7 @@ def normalize_volume(volume):
     m = np.mean(volume, axis=(0, 1, 2))
     s = np.std(volume, axis=(0, 1, 2))
     volume = (volume - m) / s
+    #print("tesssst normalizatioon",np.max(volume))
     return volume
 
 
@@ -424,7 +433,7 @@ class DiceLoss(nn.Module):
         dsc = (2.0 * intersection + self.smooth) / (
             y_pred.sum() + y_true.sum() + self.smooth
         )                
-        print("tessssttt",y_true, y_true.sum().item())
+        #print("tessssttt",y_true, y_true.sum().item())
 
         return 1.0 - dsc
     
