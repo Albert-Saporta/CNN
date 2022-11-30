@@ -30,7 +30,7 @@ unet.to(device)
 optimizer = optim.Adam(unet.parameters(), lr=0.001)
 
 #%% Training
-
+#if sum yture=0, pas de mask= pas de tumor
 
 
 

@@ -123,7 +123,7 @@ class RadiomicsCNN(nn.Module):
 
 
 
-    def __init__(self):
+    def __init__(self,dim1,dim2,dim3,n_cln):
 
         super(RadiomicsCNN, self).__init__()
         
@@ -208,7 +208,7 @@ class RadiomicsDVH(nn.Module):
     #   kernel size of the concolution layer     (1)
     #   size of the average pooling              (1)
 
-    def __init__(self, ks, pool):
+    def __init__(self, ks, pool,X_cln,X_dvh):
         super(RadiomicsDVH, self).__init__()
         
         

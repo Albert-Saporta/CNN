@@ -4,8 +4,9 @@ Created on Wed Nov 23 14:58:06 2022
 
 @author: alber
 """
-#!pip install --no-cache-dir smt
-
+!pip install wheel
+!pip install --no-cache-dir smt
+#!pip install smt
 from modules import *
 import numpy as np
 import pandas as pd 
@@ -16,7 +17,7 @@ from os import listdir
 from os.path import isfile, join
 from scipy import ndimage
 from scipy.stats import mannwhitneyu
-#from smt.sampling_methods import FullFactorial 
+from smt.sampling_methods import FullFactorial 
 
 
 from sklearn.model_selection import train_test_split,StratifiedKFold
@@ -82,13 +83,13 @@ for ip, p in enumerate(p_id):
         print(f" Extracting data ... {ip:>3d}/{n_patients} patients")
     
     # CT scanes
-    image = sitk.ReadImage(f'data/warpedCT/warped_{p}.mha')
+    image = sitk.ReadImage(path+f'warpedCT/warped_{p}.mha')
     image = sitk.GetArrayFromImage(image)
     image = image[70:185, 30:170, 40:230]
     X_cts[ip, :, :, :] = image
     
     # Dose maps
-    image = sitk.ReadImage(f'data/warpedDose/HN-CHUM-{p}-dose-refct.mha') 
+    image = sitk.ReadImage(path+f'warpedDose/HN-CHUM-{p}-dose-refct.mha') 
     image = sitk.GetArrayFromImage(image)
     image = image[70:185, 30:170, 40:230]
     X_dos[ip, :, :, :] = image
@@ -102,7 +103,7 @@ for ip, p in enumerate(p_id):
 
 
     # Also GTV contours for later use
-    image = sitk.ReadImage(f'data/warpedGtv/HN-CHUM-{p}-gtv-refct.mha') 
+    image = sitk.ReadImage(path+f'warpedGtv/HN-CHUM-{p}-gtv-refct.mha') 
     image = sitk.GetArrayFromImage(image)
     image = image[70:185, 30:170, 40:230]
     X_gtv[ip, :, :, :] = image
@@ -173,7 +174,7 @@ for ii in range(dim1):
         print(f"Slice {ii}")
         
 sl = 25
-sns.heatmap(-np.log( pval[sl,:,:] ), cbar_kws = {'label': '-log(p)'}, cmap = 'gray_r'
+sns.heatmap(-np.log( pval[sl,:,:] ), cbar_kws = {'label': '-log(p)'}, cmap = 'gray_r')
             
 #%%% significance
 alpha = 0.05 # significance level
@@ -225,7 +226,7 @@ for i in range(25):
     axs[i].set_title(f"patient {i+1}")
     
 #%%% model
-model1 = RadiomicsCNN()
+model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
 print(model1)
 
 #%%% Data preprocessing
@@ -430,7 +431,7 @@ plt.plot(bins[0:-1],X_dvh[4, :])
 
 kernel_size  = 5
 pool_size   = 3
-model2 = RadiomicsDVH(kernel_size, pool_size)
+model2 = RadiomicsDVH(kernel_size, pool_size,X_cln,X_dvh)
 print(model2)
 
 def train(n_epochs, train_loader, model2, loss_fn, optimizer):
@@ -573,9 +574,9 @@ plt.title(f"AUC {np.mean(aucs):0.2f} [{auc_lo:0.2f}, {auc_up:0.2f}]")
 
 #%%% Grid search
 
-def hp_score(kernel_size, pool_size, learning_rate):  
+def hp_score(kernel_size, pool_size, learning_rate,X_cln,X_dvh):  
   
-  model3 = Net(kernel_size, pool_size)
+  model3 = RadiomicsDVH(kernel_size, pool_size,X_cln,X_dvh)
 
   # Cross-validation parameters
   n_cv = 4
@@ -668,7 +669,7 @@ def hp_score(kernel_size, pool_size, learning_rate):
   return np.mean( np.array(aucs) )
 
 # Other sampling methods include Random; and Latin Hyper Cube 
-
+#%% smt does not wprk (pip install fail)
 # Define the upper and lower bounds of the hyperparams
 kernel_lims = [1., 10.]
 pool_lims   = [1., 10.]
