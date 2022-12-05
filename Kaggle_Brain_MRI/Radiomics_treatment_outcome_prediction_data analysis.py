@@ -4,9 +4,10 @@ Created on Wed Nov 23 14:58:06 2022
 
 @author: alber
 """
-!pip install wheel
-!pip install --no-cache-dir smt
-#!pip install smt
+#!pip install --no-cache-dir smt
+#from smt.sampling_methods import FullFactorial 
+# !pip install medpy
+
 from modules import *
 import numpy as np
 import pandas as pd 
@@ -17,8 +18,6 @@ from os import listdir
 from os.path import isfile, join
 from scipy import ndimage
 from scipy.stats import mannwhitneyu
-from smt.sampling_methods import FullFactorial 
-
 
 from sklearn.model_selection import train_test_split,StratifiedKFold
 from sklearn.utils import resample
@@ -39,20 +38,11 @@ from torch.autograd import Variable
 path='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 df_cln = pd.read_excel(f'{path}Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
 print(df_cln.head())
+device = torch.device("cuda")
 
-#%%% Statistics of data 
-fig, axs = plt.subplots(1, 4, figsize=(16,4))
-axs[0].hist(df_cln.Sex)
-axs[1].hist(df_cln.Age)
-axs[2].hist(df_cln.Stage)
-axs[3].hist(df_cln.Death)
 
-axs[0].set_title("Sex")
-axs[1].set_title("Age")
-axs[2].set_title("Stage")
-axs[3].set_title("Death")
 
-#%%% Extract dosimetric information
+#%%% P
 
 n_patients = 56
 dim1 = 185 - 70
@@ -61,7 +51,6 @@ dim3 = 230 - 40
 
 
 # Clinical data and outcomes
-#df_cln = pd.read_excel('data/Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
 features = ['Sex', 'Age', 'Stage']
 n_cln = len(features)
 
@@ -124,7 +113,7 @@ for i in range(25):
     axs[i].set_title(f"patient {i+1}")
     
 #reduce the size of the images to speed up
-    
+"""
 RF = 0.3
 
 print(f"number of voxels before resampling= {dim1*dim2*dim3}")
@@ -144,9 +133,9 @@ slc = 15
 for i in range(25):
     axs[i].imshow(x_cts[i, slc,:,:], cmap=plt.cm.Greys_r)
     axs[i].set_title(f"patient {i+1}")
-    
+"""  
 #%% Statistical significance and p value
-
+"""
 U    = np.zeros((dim1, dim2, dim3))
 pval = np.ones((dim1, dim2, dim3))
 
@@ -197,7 +186,7 @@ sns.heatmap(hits[sl,:,:], cmap = 'gray_r')
 plt.figure(figsize=(4, 4))
 plt.title("After Correction")
 plt.title(f"After correction:      hits : {hits.sum().astype(int)}")
-
+"""
 #%% Outcome Modeling
 #Use a  CNN to predict the outcome from CT scans, dose maps and patient-specific clinical variables
 #The model is composed on 2 paths; one to extract features from the images and the other process clinical variables
@@ -205,7 +194,7 @@ plt.title(f"After correction:      hits : {hits.sum().astype(int)}")
 #read https://aapm.onlinelibrary.wiley.com/doi/10.1002/mp.13122
 
 # Reduce the images further
-
+"""
 RF = 0.2
 
 x_cts = ndimage.zoom(X_cts, (1, RF, RF, RF))
@@ -224,7 +213,7 @@ slc = 15
 for i in range(25):
     axs[i].imshow(x_cts[i, slc,:,:], cmap=plt.cm.Greys_r)
     axs[i].set_title(f"patient {i+1}")
-    
+"""   
 #%%% model
 model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
 print(model1)
@@ -235,8 +224,8 @@ print(model1)
 train = [int(x) for x in range(int(0.7*n_patients))]
 test  = [x for x in range(n_patients-1) if x not in train] 
 
-X_dos_train, X_dos_test = x_dos[train,:,:,:], x_dos[test,:,:,:]
-X_cts_train, X_cts_test = x_cts[train,:,:],   x_cts[test,:,:,:]
+X_dos_train, X_dos_test = X_dos[train,:,:,:], X_dos[test,:,:,:]
+X_cts_train, X_cts_test = X_cts[train,:,:],   X_cts[test,:,:,:]
 X_cln_train, X_cln_test = X_cln[train,:],     X_cln[test,:]
 y_train, y_test         = y[train],           y[test]
 
@@ -286,7 +275,7 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, \
                         factor=0.5, patience=5, min_lr=0.00001*learning_rate,\
                             verbose=False)
 
-        
+model1.to(device)
 train_losses = []
 test_losses = []
 plt.figure(figsize = (4,4))
@@ -295,11 +284,14 @@ for epoch in range(n_epochs):
 
     # Training 
     model1.train()
-    for batch, (X_cts_train, X_dos_train, X_cln_train, y_train) in enumerate(train_loader):
+    train_loop=tqdm(train_loader)
+    for batch, (X_cts_train, X_dos_train, X_cln_train, y_train) in enumerate(train_loop):
+        train_loop.set_description(f'Epoch {epoch+1}/{n_epochs}')
         # print(y_train)
+        X_cts_train, X_dos_train, X_cln_train, y_train=X_cts_train.to(device), X_dos_train.to(device), X_cln_train.to(device), y_train.to(device)
         # loss function
-        loss_fn = nn.BCELoss()
-        
+        #loss_fn = nn.BCELoss()
+
         # zero the parameter gradients
         optimizer.zero_grad()
     
@@ -307,6 +299,8 @@ for epoch in range(n_epochs):
         pred_train = model1(X_cts_train, X_dos_train, X_cln_train)
 
         Tloss = loss_fn(pred_train, y_train)
+        train_loop.set_postfix(training_loss=Tloss.item())
+
         Tloss.backward()
         optimizer.step()
         
@@ -322,9 +316,12 @@ for epoch in range(n_epochs):
     Y_hat = torch.Tensor([])
     batch_accuracy = 0
     test_loss = 0
-    for batch, (X_cts_test, X_dos_test, X_cln_test, y_test) in enumerate(test_loader):
+    test_loop=tqdm(test_loader)
+    for batch, (X_cts_test, X_dos_test, X_cln_test, y_test) in enumerate(test_loop):
+        X_cts_test, X_dos_test, X_cln_test, y_test=X_cts_test.to(device), X_dos_test.to(device), X_cln_test.to(device), y_test.to(device)
         pred_test  = model1(X_cts_test, X_dos_test, X_cln_test)        
-        Vloss = loss_fn(pred_train, y_train)    
+        Vloss = loss_fn(pred_test, y_test)
+        test_loop.set_postfix(test_loss=Vloss.item())
         test_loss += Vloss.item()
     
     test_loss = test_loss/(batch+1)  
@@ -671,6 +668,7 @@ def hp_score(kernel_size, pool_size, learning_rate,X_cln,X_dvh):
 # Other sampling methods include Random; and Latin Hyper Cube 
 #%% smt does not wprk (pip install fail)
 # Define the upper and lower bounds of the hyperparams
+"""
 kernel_lims = [1., 10.]
 pool_lims   = [1., 10.]
 lr_lims     = [-4., 0] # 1e-4 - 0
@@ -719,5 +717,5 @@ print(f"\t Kernel Size     : {best_KS}")
 print(f"\t Pool Size       : {best_PS}")
 print(f"\t Learning Rate   : {best_LR}")
 print(f"Best AUC  : {best_AUC:0.5f}\n")
-
+"""
 #%% Refinement : Always look at the precision-recall curve
