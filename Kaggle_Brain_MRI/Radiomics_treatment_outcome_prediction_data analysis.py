@@ -39,7 +39,7 @@ path='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 df_cln = pd.read_excel(f'{path}Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
 print(df_cln.head())
 device = torch.device("cuda")
-
+pth_file_name="radiomics3dCNN"
 
 
 #%%% P
@@ -266,7 +266,7 @@ test_loader = DataLoader(test_set, batch_size = bs )
 
 #%%% Hyperparameters
 
-n_epochs = 100
+n_epochs =1# 100
 learning_rate = 0.01
 optimizer = Adam(model1.parameters(), lr = learning_rate)
 loss_fn = nn.BCELoss()
@@ -327,7 +327,7 @@ for epoch in range(n_epochs):
     test_loss = test_loss/(batch+1)  
     test_losses.append(test_loss)
     
-    
+    torch.save(model1.state_dict(), f'C:/Users/alber/Bureau/Development/DeepLearning/training_results/{pth_file_name}.pth')
     # Plot results
     if epoch%20 == 0 and epoch != 0:
       print(f"[{epoch:>3d}] \t Train : {train_loss:0.5f} \t Test : {test_loss:0.5f}")
@@ -339,14 +339,14 @@ plt.legend()
 plt.xlabel("Epoch")
 
 #%% validation. to do save model and use another code
-
+"""
 # Make prediction using the testing dataset
 model1.eval()
-y_true = torch.Tensor([])
-y_pred = torch.Tensor([])
+y_true = torch.Tensor([]).to(device)
+y_pred = torch.Tensor([]).to(device)
 batch_accuracy = 0
 for batch, (x_test, x_ct_test, x_clinical_test, y_test) in enumerate(test_loader):
-    pred   = model1(x_test, x_ct_test, x_clinical_test)        
+    pred   = model1(x_test.to(device), x_ct_test.to(device), x_clinical_test.to(device))        
     y_true = torch.cat((y_true,y_test))
     y_pred = torch.cat((y_pred,pred))
 
@@ -385,7 +385,7 @@ no_skill = len(y_true[y_true==1]) / len(y_true)
 plt.plot([0, 1], [no_skill, no_skill], '--')
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-
+"""
 #%% prediction using DVH
 #The dose-volume histogram (DVH) is a 2-D representation of the 3D dose maps
 #It is used to evaluate plans and assess toxicity in organs-at-risk
