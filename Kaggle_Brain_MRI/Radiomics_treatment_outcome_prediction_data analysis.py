@@ -257,17 +257,17 @@ y_test      = torch.tensor(y_test).float()
 bs = 10
 
 train_set = TensorDataset(X_cts_train, X_dos_train, X_cln_train, y_train)
-train_loader = DataLoader(train_set, batch_size = bs ) 
+train_loader = DataLoader(train_set, batch_size = bs,pin_memory=True ) 
 
 test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
-test_loader = DataLoader(test_set, batch_size = bs )
+test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True )
 
 #%% training
 
 #%%% Hyperparameters
 
 n_epochs =1# 100
-learning_rate = 0.01
+learning_rate = 0.001 #0.01
 optimizer = Adam(model1.parameters(), lr = learning_rate)
 loss_fn = nn.BCELoss()
 
