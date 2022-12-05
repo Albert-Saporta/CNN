@@ -266,7 +266,7 @@ test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True )
 
 #%%% Hyperparameters
 
-n_epochs =1# 100
+n_epochs =100
 learning_rate = 0.001 #0.01
 optimizer = Adam(model1.parameters(), lr = learning_rate)
 loss_fn = nn.BCELoss()
