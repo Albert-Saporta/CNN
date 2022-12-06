@@ -39,7 +39,7 @@ path='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 df_cln = pd.read_excel(f'{path}Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
 print(df_cln.head())
 device = torch.device("cuda")
-pth_file_name="radiomics3dCNN"
+pth_file_name="radiomics3dCNN_2"
 
 
 #%%% P
