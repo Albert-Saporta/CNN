@@ -35,11 +35,11 @@ from torch.optim import Adam, SGD
 from torch.autograd import Variable
 
 #%% Extract clinical data and outcome
-path='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
-df_cln = pd.read_excel(f'{path}Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
+path='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
+df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
 print(df_cln.head())
 device = torch.device("cuda")
-pth_file_name="radiomics3dCNN_2"
+pth_file_name="/bigdata/casus/optima/radiomics3dCNN_2"
 
 
 #%%% P
@@ -327,7 +327,9 @@ for epoch in range(n_epochs):
     test_loss = test_loss/(batch+1)  
     test_losses.append(test_loss)
     
-    torch.save(model1.state_dict(), f'C:/Users/alber/Bureau/Development/DeepLearning/training_results/{pth_file_name}.pth')
+    #torch.save(model1.state_dict(), f'C:/Users/alber/Bureau/Development/DeepLearning/training_results/{pth_file_name}.pth')
+    torch.save(model1.state_dict(), pth_file_name+'.pth')
+
     # Plot results
     if epoch%20 == 0 and epoch != 0:
       print(f"[{epoch:>3d}] \t Train : {train_loss:0.5f} \t Test : {test_loss:0.5f}")

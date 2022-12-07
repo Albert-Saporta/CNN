@@ -42,8 +42,10 @@ from torch.optim import Adam, SGD
 from torch.autograd import Variable
 
 #%% Extract clinical data and outcome
-path='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
-df_cln = pd.read_excel(f'{path}Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
+#path='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
+path='/bigdata/casus/optima/Radiomics_McMedHacks/'
+
+df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
 print(df_cln.head())
 device = torch.device("cuda")
 pth_file_name="radiomics3dCNN"
@@ -163,7 +165,7 @@ test_loader = DataLoader(test_set, batch_size = bs )
 #%% training
 
 #%%% Hyperparameters
-pth='C:/Users/alber/Bureau/Development/DeepLearning/training_results/radiomics3dCNN.pth'
+pth=path+'radiomics3dCNN.pth'
 
 CNN3D = RadiomicsCNN(dim1,dim2,dim3,n_cln)
 state_dict = torch.load(pth, map_location=device)
