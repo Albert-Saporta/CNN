@@ -47,8 +47,8 @@ pth_path_cluster="/bigdata/casus/optima/"
 pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/"
 
 
-pth_file_name=pth_path_local+"radiomics3dCNN_2"
-path=path_local
+pth_file_name=pth_path_cluster+"radiomics3dCNN_2"
+path=path_cluster
 
 #%%% Clinical data
 df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
