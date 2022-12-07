@@ -33,8 +33,8 @@ from torch.optim import Adam, SGD
 from torch.autograd import Variable
 
 #%% Hyperparameters
-bs = 10
-n_epochs =100
+bs = 4
+n_epochs =1000
 learning_rate = 0.001 #0.01
 loss_fn = nn.BCELoss()
 
@@ -68,30 +68,7 @@ dim1 = 185 - 70
 dim2 = 170 - 30
 dim3 = 230 - 40
 
-ks    = 3
-pool  = 2
 
-
-
-
-
-
-
-I1, P, K, S = dim1, 0, ks, 1
-O1 = (I1 - K + 2*P) / S + 1 
-O1 = (O1 - pool)/pool + 1
-O1 = int(O1)
-
-I2 = dim2
-O2 = (I2 - K + 2*P) / S + 1 
-O2 = (O2 - pool)/pool + 1
-O2 = int(O2)
-
-I3 = dim3
-O3 = (I3 - K + 2*P) / S + 1 
-O3 = (O3 - pool)/pool + 1
-O3 = int(O3)
-print("oo",O1*O2*O3)
 
 
 # Clinical data and outcomes
@@ -241,10 +218,23 @@ for i in range(25):
 #%%% model
 model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
 print(model1)
+
 optimizer = Adam(model1.parameters(), lr = learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, \
                         factor=0.5, patience=5, min_lr=0.00001*learning_rate,\
                             verbose=False)
+    
+def weights_init(m):
+   if isinstance(m, nn.Conv3d):
+       torch.nn.init.normal_(m.weight, 0.0, 0.02)
+   if isinstance(m, nn.BatchNorm3d):
+       torch.nn.init.normal_(m.weight, 0.0, 0.02)
+       torch.nn.init.constant_(m.bias, 0)
+   if isinstance(m, nn.Linear):
+       torch.nn.init.normal_(m.weight, 0.0, 0.02)
+       torch.nn.init.constant_(m.bias, 0)
+            
+model1 = model1.apply(weights_init)
 #%%% Data preprocessing
 
 #Split data
