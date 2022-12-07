@@ -26,5 +26,5 @@ module load python/3.9.6
 
 
 # Execute your code
-python Kaggle_Brain_MRI/Radiomics.py
+python /bigdata/casus/optima/scripts/CNN/Kaggle_Brain_MRI/Radiomics.py
 
