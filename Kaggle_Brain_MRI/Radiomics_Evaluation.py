@@ -42,21 +42,19 @@ from torch.optim import Adam, SGD
 from torch.autograd import Variable
 
 #%% Extract clinical data and outcome
-#path='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
-path='/bigdata/casus/optima/Radiomics_McMedHacks/'
+path='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 
 df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
-print(df_cln.head())
-device = torch.device("cuda")
-pth_file_name="radiomics3dCNN"
-
+device = torch.device("cpu")
+pth_file_name="C:/Users/alber/Bureau/Development/DeepLearning/CNN/radiomics3dCNN_2.pth"
+pth=pth_file_name
 
 #%%% P
 
 n_patients = 56
-dim1 = 185 - 70
-dim2 = 170 - 30
-dim3 = 230 - 40
+dim1 = 194#185 - 70
+dim2 = 256#170 - 30
+dim3 = 256#230 - 40
 
 
 # Clinical data and outcomes
@@ -83,13 +81,13 @@ for ip, p in enumerate(p_id):
     # CT scanes
     image = sitk.ReadImage(path+f'warpedCT/warped_{p}.mha')
     image = sitk.GetArrayFromImage(image)
-    image = image[70:185, 30:170, 40:230]
+    #image = image[70:185, 30:170, 40:230]
     X_cts[ip, :, :, :] = image
     
     # Dose maps
     image = sitk.ReadImage(path+f'warpedDose/HN-CHUM-{p}-dose-refct.mha') 
     image = sitk.GetArrayFromImage(image)
-    image = image[70:185, 30:170, 40:230]
+    #image = image[70:185, 30:170, 40:230]
     X_dos[ip, :, :, :] = image
     
     # Clinical
@@ -99,13 +97,13 @@ for ip, p in enumerate(p_id):
     # Outcomes
     y[ip] = df_cln['Death'][ip]
 
-
+    """
     # Also GTV contours for later use
     image = sitk.ReadImage(path+f'warpedGtv/HN-CHUM-{p}-gtv-refct.mha') 
     image = sitk.GetArrayFromImage(image)
-    image = image[70:185, 30:170, 40:230]
+    #image = image[70:185, 30:170, 40:230]
     X_gtv[ip, :, :, :] = image
-    
+    """
  
 print()
         
@@ -165,9 +163,8 @@ test_loader = DataLoader(test_set, batch_size = bs )
 #%% training
 
 #%%% Hyperparameters
-pth=path+'radiomics3dCNN.pth'
 
-CNN3D = RadiomicsCNN(dim1,dim2,dim3,n_cln)
+CNN3D = RadiomicsCNN_1conv(dim1,dim2,dim3,n_cln)
 state_dict = torch.load(pth, map_location=device)
 CNN3D.load_state_dict(state_dict)
 CNN3D.eval()

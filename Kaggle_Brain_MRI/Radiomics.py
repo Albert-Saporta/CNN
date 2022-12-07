@@ -47,20 +47,51 @@ pth_path_cluster="/bigdata/casus/optima/"
 pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/"
 
 
-pth_file_name=pth_path_cluster+"radiomics3dCNN_2"
+pth_file_name=pth_path_cluster+"radiomics3dCNN_0712"
 path=path_cluster
 
 #%%% Clinical data
 df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
-device = torch.device("cuda")
+device = torch.device("cpu")
 
 
 #%%% P
 
 n_patients = 56
-dim1 = 194#185 - 70
-dim2 = 256#170 - 30
-dim3 = 256#230 - 40
+"""
+dim1 = 194
+dim2 = 256
+dim3 = 256
+"""
+
+dim1 = 185 - 70
+dim2 = 170 - 30
+dim3 = 230 - 40
+
+ks    = 3
+pool  = 2
+
+
+
+
+
+
+
+I1, P, K, S = dim1, 0, ks, 1
+O1 = (I1 - K + 2*P) / S + 1 
+O1 = (O1 - pool)/pool + 1
+O1 = int(O1)
+
+I2 = dim2
+O2 = (I2 - K + 2*P) / S + 1 
+O2 = (O2 - pool)/pool + 1
+O2 = int(O2)
+
+I3 = dim3
+O3 = (I3 - K + 2*P) / S + 1 
+O3 = (O3 - pool)/pool + 1
+O3 = int(O3)
+print("oo",O1*O2*O3)
 
 
 # Clinical data and outcomes
@@ -87,13 +118,13 @@ for ip, p in enumerate(p_id):
     # CT scanes
     image = sitk.ReadImage(path+f'warpedCT/warped_{p}.mha')
     image = sitk.GetArrayFromImage(image)
-    #image = image[70:185, 30:170, 40:230]
+    image = image[70:185, 30:170, 40:230]
     X_cts[ip, :, :, :] = image
     
     # Dose maps
     image = sitk.ReadImage(path+f'warpedDose/HN-CHUM-{p}-dose-refct.mha') 
     image = sitk.GetArrayFromImage(image)
-    #image = image[70:185, 30:170, 40:230]
+    image = image[70:185, 30:170, 40:230]
     X_dos[ip, :, :, :] = image
     
     # Clinical
@@ -103,13 +134,13 @@ for ip, p in enumerate(p_id):
     # Outcomes
     y[ip] = df_cln['Death'][ip]
 
-
+    """
     # Also GTV contours for later use
     image = sitk.ReadImage(path+f'warpedGtv/HN-CHUM-{p}-gtv-refct.mha') 
     image = sitk.GetArrayFromImage(image)
-    #image = image[70:185, 30:170, 40:230]
+    image = image[70:185, 30:170, 40:230]
     X_gtv[ip, :, :, :] = image
-    
+    """
  
 print()
         
