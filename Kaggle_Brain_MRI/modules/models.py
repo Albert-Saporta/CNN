@@ -108,100 +108,7 @@ class UNet2D(nn.Module):
 
 #%% CNN for radiomics (McMedHacks 7.2)
 
-class RadiomicsCNN_1conv(nn.Module):
-    
-    # RadiomicsCNN Architecture
-    # 
-    # dosemap and CT scans --> conv --> normalization --> relu --> max pooling --> 
-    #       flattening --> 
-    # Adding clinical path
-    #       FC reduce X to the size of X_clinical --> normalize --> rrelu -->
-    #       X + X_clinic --> 
-    #       FC --> normalize --> rrelu --> 
-    #       FC --> normalize --> sigmoid
-    
 
-
-
-    def __init__(self,dim1,dim2,dim3,n_cln):
-
-        super(RadiomicsCNN_1conv, self).__init__()
-        
-        ks    = 10
-        pool  = 5
-        
-        # Convolution layers
-        n_in  = 2
-        n_out = 1
-        self.conv1 = nn.Conv3d(in_channels = n_in, out_channels = n_out, kernel_size = ks)
-        self.conv1_bn = nn.BatchNorm3d(n_out)
-        nn.ReLU(),
-        
-        # Pooling layers
-        self.maxpool1 = nn.MaxPool3d(kernel_size = pool)
-        
-        # Flattening
-        self.flat = nn.Flatten()
-        
-        # Fully-conneceted layers 
-        
-        # FC 1: make the size of x equal to the of the clinical path
-
-        
-        I1, P, K, S = dim1, 0, ks, 1
-        O1 = (I1 - K + 2*P) / S + 1 
-        O1 = (O1 - pool)/pool + 1
-        O1 = int(O1)
-        
-        I2 = dim2
-        O2 = (I2 - K + 2*P) / S + 1 
-        O2 = (O2 - pool)/pool + 1
-        O2 = int(O2)
-        
-        I3 = dim3
-        O3 = (I3 - K + 2*P) / S + 1 
-        O3 = (O3 - pool)/pool + 1
-        O3 = int(O3)
-
-        self.fc1 = nn.Linear(O1*O2*O3, n_cln)
-        self.fc1_bn = nn.BatchNorm1d(n_cln)
-        
-        # FC 2: expand the features after concatination
-        L_in = int ( 2 * n_cln ) 
-        L_out = int ( L_in)
-        self.fc2 = nn.Linear(L_in, L_out)
-        self.fc2_bn = nn.BatchNorm1d(L_out)
-        
-        # FC 3: make prediction
-        self.fc3 = nn.Linear(L_out, 1)
-        self.fc3_bn = nn.BatchNorm1d(1)
-        
-
-
-    def forward(self, x_dos, x_cts, x_cln):
-        
-        
-        # Concatenate dosimetric and clinical features
-        x = torch.cat((x_dos, x_cts), dim=1)
-        
-        # average pooling
-        x = self.maxpool1(  F.rrelu(  self.conv1_bn(  self.conv1(x)  )  )  )   
-        
-        x = self.flat(x)
-        
-        # FC layer to reduce x to the size of the clinical path
-        x = F.rrelu( self.fc1_bn( self.fc1(x) ) )
-
-
-        # Concatinate clinical variables
-        x_cln = x_cln.squeeze(1)
-        x_final = torch.cat((x, x_cln), dim=1)
-
-        # Last FCs
-        x_final = F.rrelu  ( self.fc2_bn( self.fc2(x_final) ) )
-        x_final = torch.sigmoid( self.fc3_bn( self.fc3(x_final) ) )
-
-        return x_final.squeeze()
 
 
 class RadiomicsCNN(nn.Module):
@@ -265,8 +172,8 @@ class RadiomicsCNN(nn.Module):
         self.fc1_bn = nn.BatchNorm1d(n_cln)
         
         # FC 2: expand the features after concatination
-        L_in = int ( 2 * n_cln ) 
-        L_out = int ( L_in)
+        L_in = int(2*n_cln) 
+        L_out = int(L_in)
         self.fc2 = nn.Linear(L_in, L_out)
         self.fc2_bn = nn.BatchNorm1d(L_out)
         
@@ -282,7 +189,6 @@ class RadiomicsCNN(nn.Module):
         # Concatenate dosimetric and clinical features
         x = torch.cat((x_dos, x_cts), dim=1)
         
-        # average pooling
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
@@ -291,8 +197,7 @@ class RadiomicsCNN(nn.Module):
         x = self.flat(x)
         #print("flat shape",x.shape)
         # FC layer to reduce x to the size of the clinical path
-        x = F.rrelu( self.fc1_bn( self.fc1(x) ) )
-
+        x = F.rrelu(self.fc1_bn( self.fc1(x)))
 
         # Concatinate clinical variables
         x_cln = x_cln.squeeze(1)
@@ -301,17 +206,19 @@ class RadiomicsCNN(nn.Module):
         x_final = torch.cat((x, x_cln), dim=1)
 
         # Last FCs
-        x_final = F.rrelu  ( self.fc2_bn( self.fc2(x_final) ) )
-        x_final = torch.sigmoid( self.fc3_bn( self.fc3(x_final) ) )
+        x_final = F.rrelu(self.fc2_bn(self.fc2(x_final)))
+        x_final = torch.sigmoid(self.fc3_bn( self.fc3(x_final)))
 
         return x_final.squeeze()    
     
     @staticmethod
     def block(n_in, n_out, ks,pool):
-        return nn.Sequential(nn.Conv3d(in_channels = n_in, out_channels = n_out, kernel_size = ks),
-            nn.BatchNorm3d(n_out),
+        return nn.Sequential(nn.Conv3d(in_channels = n_in, out_channels = n_out, kernel_size = ks,padding=0),
             nn.LeakyReLU(),
-            nn.MaxPool3d(kernel_size = pool))
+            nn.MaxPool3d(kernel_size = pool),
+            nn.BatchNorm3d(n_out),
+            nn.Dropout())
+    #check the order: https://stackoverflow.com/questions/39691902/ordering-of-batch-normalization-and-dropout
             
            
                 

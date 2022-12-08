@@ -31,7 +31,7 @@ from sklearn.utils import resample
 
 # for evaluating the model
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
-from sklearn.metrics import roc_auc_score, auc, roc_curve, precision_recall_curve
+from sklearn.metrics import roc_auc_score, auc, roc_curve, precision_recall_curve,plot_roc_curve
 from scipy import interp
 
 from random import randrange#bootstrapping
@@ -46,7 +46,7 @@ path='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 
 df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
 device = torch.device("cpu")
-pth_file_name="C:/Users/alber/Bureau/Development/DeepLearning/CNN/radiomics3dCNN_0712.pth"
+pth_file_name="C:/Users/alber/Bureau/Development/DeepLearning/training_results/cluster/radiomics3dCNN_0712.pth"
 pth=pth_file_name
 
 #%%% P
@@ -118,7 +118,9 @@ print(f"{sum(y)}/{len(y)} patients are positive")
 
 
 #%%% Data preprocessing
-
+X_cln=X_cln/X_cln.max()
+X_dos=X_dos/X_dos.max()
+X_cts=X_cts/X_cts.max()
 #Split data
 train = [int(x) for x in range(int(0.7*n_patients))]
 test  = [x for x in range(n_patients-1) if x not in train] 
@@ -183,13 +185,15 @@ for batch, (x_test, x_ct_test, x_clinical_test, y_test) in enumerate(test_loader
 
 
 # Calculate AUC
-auc = roc_auc_score(y_true.cpu().detach().numpy().astype(int), y_pred.cpu().detach().numpy())
+auc = roc_auc_score(y_true.detach().numpy().astype(int), y_pred.detach().numpy())
+#auc = roc_auc_score(y_true.cpu().detach().numpy().astype(int), y_pred.cpu().detach().numpy())
+
 print(f"AUC : {auc}")
 
 print(y_true,y_pred)
 # Plot ROC Curve
-fpr, tpr, thr = roc_curve(y_true.cpu().detach().numpy(), y_pred.cpu().detach().numpy(),pos_label=0)
-plt.plot(fpr, tpr, 'b', label = f"AUC = {auc:0.3f}")
+fpr, tpr, thr = roc_curve(y_true.cpu().detach().numpy(), y_pred.cpu().detach().numpy())
+plt.plot(fpr,tpr, 'b', label = f"AUC = {auc:0.3f}")
 plt.plot([0, 1], [0, 1],'r--', label = 'Chance')
 plt.xlim([-0.01, 1.01])
 plt.ylim([-0.01, 1.01])
@@ -197,20 +201,23 @@ plt.legend()
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.show()
+
 def to_labels(pos_probs, threshold):
         return (pos_probs >= threshold).astype('int')
         
 thr = .2
-CM = confusion_matrix(y_true.cpu().detach().numpy().astype(int), to_labels(y_pred.cpu().detach().numpy(), thr).astype(int))
+CM = confusion_matrix(y_true.detach().numpy().astype(int), to_labels(y_pred.detach().numpy(), thr).astype(int))
+#CM = confusion_matrix(y_true.cpu().detach().numpy().astype(int), to_labels(y_pred.cpu().detach().numpy(), thr).astype(int))
 
 df_cm = pd.DataFrame(CM, index = [i for i in "PN"],
                   columns = [i for i in "PN"])
 sns.heatmap(df_cm, annot=True, cmap = 'Blues')
-
+plt.show()
 #%%% Precision recall curve
 
 
-prec, recall, thr2 = precision_recall_curve(y_true.cpu().detach().numpy().astype(int), to_labels(y_pred.cpu().detach().numpy(), thr).astype(int))
+prec, recall, thr2 = precision_recall_curve(y_true.detach().numpy().astype(int), to_labels(y_pred.detach().numpy(), thr).astype(int))
+#prec, recall, thr2 = precision_recall_curve(y_true.cpu().detach().numpy().astype(int), to_labels(y_pred.cpu().detach().numpy(), thr).astype(int))
 
 plt.plot(recall, prec, 'orange', lw=2)
 no_skill = len(y_true[y_true==1]) / len(y_true)

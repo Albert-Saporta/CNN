@@ -49,14 +49,14 @@ pth_path_cluster="/bigdata/casus/optima/"
 pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/"
 
 
-pth_file_name=pth_path_cluster+"radiomics3dCNN_0712"
+pth_file_name=pth_path_cluster+"radiomics3dCNN_0812"
 path=path_cluster
 device = torch.device("cuda")
 
 """
 pth_file_name=pth_path_local+"radiomics3dCNN_0712"
 path=path_local
-device = torch.device("cpu")
+device = torch.device("cuda")
 """
 
 #%%% Clinical data
@@ -248,7 +248,18 @@ model1 = model1.apply(weights_init)
 
 #%%% Normalization
 
-X_cln=X_cln/X_cln.max()
+
+""" use scikit learn standard scaler"""
+# Normalize continuous clinical variables
+#X_cln=X_cln/X_cln.max()
+
+var = 1 # index of 'Age'
+mean = X_cln_train[:,var].mean()
+std  = X_cln_train[:,var].std()
+X_cln_train[:,var] = ( X_cln_train[:,var] - mean ) / std
+X_cln_test [:,var] = ( X_cln_test [:,var] - mean ) / std
+
+
 X_dos=X_dos/X_dos.max()
 X_cts=X_cts/X_cts.max()
 
@@ -263,15 +274,7 @@ X_cln_train, X_cln_test = X_cln[train,:],     X_cln[test,:]
 y_train, y_test         = y[train],           y[test]
 
 
-""" use scikit learn standard scaler"""
-# Normalize continuous clinical variables
-"""
-var = 1 # index of 'Age'
-mean = X_cln_train[:,var].mean()
-std  = X_cln_train[:,var].std()
-X_cln_train[:,var] = ( X_cln_train[:,var] - mean ) / std
-X_cln_test [:,var] = ( X_cln_test [:,var] - mean ) / std
-"""
+
 
 # convert data to tensors
 X_cts_train  = torch.tensor(X_cts_train).float().unsqueeze(1)
@@ -291,16 +294,16 @@ y_test      = torch.tensor(y_test).float()
 
 
 train_set = TensorDataset(X_cts_train, X_dos_train, X_cln_train, y_train)
-train_loader = DataLoader(train_set, batch_size = bs,pin_memory=True,shuffle=True ) 
+train_loader = DataLoader(train_set, batch_size = bs,pin_memory=True,shuffle=True) 
 
 test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
-test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True )
+test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True)
 
 #%% training
 
 
-
 model1.to(device)
+
 train_losses = []
 test_losses = []
 plt.figure(figsize = (4,4))
@@ -380,6 +383,3 @@ plt.plot(list(range(epoch+1)), test_losses,  label = 'Validation')
 plt.legend()
 plt.savefig(pth_path_cluster+'Learning_Curves.pdf',format='pdf')
 plt.xlabel("Epoch")
-
-
-
