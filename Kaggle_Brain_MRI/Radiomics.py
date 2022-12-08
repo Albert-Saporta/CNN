@@ -250,14 +250,13 @@ model1 = model1.apply(weights_init)
 
 
 """ use scikit learn standard scaler"""
-# Normalize continuous clinical variables
-#X_cln=X_cln/X_cln.max()
+# Normalize continuous clinical variables!! use fit on train and transform on test!!
+
 
 var = 1 # index of 'Age'
-mean = X_cln_train[:,var].mean()
-std  = X_cln_train[:,var].std()
-X_cln_train[:,var] = ( X_cln_train[:,var] - mean ) / std
-X_cln_test [:,var] = ( X_cln_test [:,var] - mean ) / std
+mean = X_cln[:,var].mean()
+std  = X_cln[:,var].std()
+X_cln[:,var] = (X_cln[:,var]-mean)/std
 
 
 X_dos=X_dos/X_dos.max()

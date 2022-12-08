@@ -118,7 +118,11 @@ print(f"{sum(y)}/{len(y)} patients are positive")
 
 
 #%%% Data preprocessing
-X_cln=X_cln/X_cln.max()
+var = 1 # index of 'Age'
+mean = X_cln[:,var].mean()
+std  = X_cln[:,var].std()
+X_cln[:,var] = (X_cln[:,var]-mean)/std
+
 X_dos=X_dos/X_dos.max()
 X_cts=X_cts/X_cts.max()
 #Split data
