@@ -25,7 +25,7 @@ from os import listdir
 from os.path import isfile, join
 from scipy import ndimage
 from scipy.stats import mannwhitneyu
-
+import tqdm
 from sklearn.model_selection import train_test_split,StratifiedKFold
 from sklearn.utils import resample
 
@@ -46,15 +46,15 @@ path='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 
 df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
 device = torch.device("cpu")
-pth_file_name="C:/Users/alber/Bureau/Development/DeepLearning/CNN/radiomics3dCNN_2.pth"
+pth_file_name="C:/Users/alber/Bureau/Development/DeepLearning/CNN/radiomics3dCNN_0712.pth"
 pth=pth_file_name
 
 #%%% P
 
 n_patients = 56
-dim1 = 194#185 - 70
-dim2 = 256#170 - 30
-dim3 = 256#230 - 40
+dim1 = 185 - 70
+dim2 = 170 - 30
+dim3 = 230 - 40
 
 
 # Clinical data and outcomes
@@ -81,13 +81,13 @@ for ip, p in enumerate(p_id):
     # CT scanes
     image = sitk.ReadImage(path+f'warpedCT/warped_{p}.mha')
     image = sitk.GetArrayFromImage(image)
-    #image = image[70:185, 30:170, 40:230]
+    image = image[70:185, 30:170, 40:230]
     X_cts[ip, :, :, :] = image
     
     # Dose maps
     image = sitk.ReadImage(path+f'warpedDose/HN-CHUM-{p}-dose-refct.mha') 
     image = sitk.GetArrayFromImage(image)
-    #image = image[70:185, 30:170, 40:230]
+    image = image[70:185, 30:170, 40:230]
     X_dos[ip, :, :, :] = image
     
     # Clinical
@@ -153,18 +153,16 @@ y_test      = torch.tensor(y_test).float()
 
 
 # Combine datasets
-bs = 10
+bs = 4
 
 
 
 test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
 test_loader = DataLoader(test_set, batch_size = bs )
 
-#%% training
 
-#%%% Hyperparameters
 
-CNN3D = RadiomicsCNN_1conv(dim1,dim2,dim3,n_cln)
+CNN3D = RadiomicsCNN(dim1,dim2,dim3,n_cln)
 state_dict = torch.load(pth, map_location=device)
 CNN3D.load_state_dict(state_dict)
 CNN3D.eval()
@@ -188,8 +186,9 @@ for batch, (x_test, x_ct_test, x_clinical_test, y_test) in enumerate(test_loader
 auc = roc_auc_score(y_true.cpu().detach().numpy().astype(int), y_pred.cpu().detach().numpy())
 print(f"AUC : {auc}")
 
+print(y_true,y_pred)
 # Plot ROC Curve
-fpr, tpr, thr = roc_curve(y_true.cpu().detach().numpy(), y_pred.cpu().detach().numpy())
+fpr, tpr, thr = roc_curve(y_true.cpu().detach().numpy(), y_pred.cpu().detach().numpy(),pos_label=0)
 plt.plot(fpr, tpr, 'b', label = f"AUC = {auc:0.3f}")
 plt.plot([0, 1], [0, 1],'r--', label = 'Chance')
 plt.xlim([-0.01, 1.01])
@@ -197,7 +196,7 @@ plt.ylim([-0.01, 1.01])
 plt.legend()
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
-
+plt.show()
 def to_labels(pos_probs, threshold):
         return (pos_probs >= threshold).astype('int')
         
@@ -218,6 +217,7 @@ no_skill = len(y_true[y_true==1]) / len(y_true)
 plt.plot([0, 1], [no_skill, no_skill], '--')
 plt.xlabel('Recall')
 plt.ylabel('Precision')
+plt.show()
 
 #%% prediction using DVH
 #The dose-volume histogram (DVH) is a 2-D representation of the 3D dose maps

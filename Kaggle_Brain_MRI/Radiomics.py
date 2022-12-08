@@ -28,6 +28,8 @@ from scipy import interp
 from random import randrange#bootstrapping
 import SimpleITK as sitk
 
+import torch
+import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
@@ -49,10 +51,16 @@ pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/
 
 pth_file_name=pth_path_cluster+"radiomics3dCNN_0712"
 path=path_cluster
+device = torch.device("cuda")
+
+"""
+pth_file_name=pth_path_local+"radiomics3dCNN_0712"
+path=path_local
+device = torch.device("cpu")
+"""
 
 #%%% Clinical data
 df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
-device = torch.device("cpu")
 
 
 #%%% P
@@ -188,12 +196,6 @@ plt.figure(figsize=(4, 4))
 plt.title("After Correction")
 plt.title(f"After correction:      hits : {hits.sum().astype(int)}")
 """
-#%% Outcome Modeling
-#Use a  CNN to predict the outcome from CT scans, dose maps and patient-specific clinical variables
-#The model is composed on 2 paths; one to extract features from the images and the other process clinical variables
-#concatenate both paths before prediction
-#read https://aapm.onlinelibrary.wiley.com/doi/10.1002/mp.13122
-
 # Reduce the images further
 """
 RF = 0.2
@@ -214,8 +216,15 @@ slc = 15
 for i in range(25):
     axs[i].imshow(x_cts[i, slc,:,:], cmap=plt.cm.Greys_r)
     axs[i].set_title(f"patient {i+1}")
-"""   
-#%%% model
+"""  
+#%% Outcome Modeling
+#Use a  CNN to predict the outcome from CT scans, dose maps and patient-specific clinical variables
+#The model is composed on 2 paths; one to extract features from the images and the other process clinical variables
+#concatenate both paths before prediction
+#read https://aapm.onlinelibrary.wiley.com/doi/10.1002/mp.13122
+
+ 
+#%% model
 model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
 print(model1)
 
@@ -223,7 +232,7 @@ optimizer = Adam(model1.parameters(), lr = learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, \
                         factor=0.5, patience=5, min_lr=0.00001*learning_rate,\
                             verbose=False)
-    
+# mettre avant optimizer?
 def weights_init(m):
    if isinstance(m, nn.Conv3d):
        torch.nn.init.normal_(m.weight, 0.0, 0.02)
@@ -235,8 +244,15 @@ def weights_init(m):
        torch.nn.init.constant_(m.bias, 0)
             
 model1 = model1.apply(weights_init)
-#%%% Data preprocessing
+#%% Data preprocessing
 
+#%%% Normalization
+
+X_cln=X_cln/X_cln.max()
+X_dos=X_dos/X_dos.max()
+X_cts=X_cts/X_cts.max()
+
+#%%% train and test set
 #Split data
 train = [int(x) for x in range(int(0.7*n_patients))]
 test  = [x for x in range(n_patients-1) if x not in train] 
@@ -249,12 +265,13 @@ y_train, y_test         = y[train],           y[test]
 
 """ use scikit learn standard scaler"""
 # Normalize continuous clinical variables
+"""
 var = 1 # index of 'Age'
 mean = X_cln_train[:,var].mean()
 std  = X_cln_train[:,var].std()
 X_cln_train[:,var] = ( X_cln_train[:,var] - mean ) / std
 X_cln_test [:,var] = ( X_cln_test [:,var] - mean ) / std
-
+"""
 
 # convert data to tensors
 X_cts_train  = torch.tensor(X_cts_train).float().unsqueeze(1)
@@ -274,10 +291,10 @@ y_test      = torch.tensor(y_test).float()
 
 
 train_set = TensorDataset(X_cts_train, X_dos_train, X_cln_train, y_train)
-train_loader = DataLoader(train_set, batch_size = bs,pin_memory=True ) 
+train_loader = DataLoader(train_set, batch_size = bs,pin_memory=True,shuffle=True ) 
 
 test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
-test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True )
+test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True )
 
 #%% training
 
@@ -305,9 +322,17 @@ for epoch in range(n_epochs):
     
         # forward + backward + optimize
         pred_train = model1(X_cts_train, X_dos_train, X_cln_train)
+        
+        try:
+            auc = roc_auc_score(y_train.cpu().detach().numpy().astype(int), pred_train.cpu().detach().numpy())
+            #auc = roc_auc_score(y_train.detach().numpy().astype(int), pred_train.detach().numpy())
 
+            #print(f"AUC : {auc}")
+        except ValueError:
+            pass
+        
         Tloss = loss_fn(pred_train, y_train)
-        train_loop.set_postfix(training_loss=Tloss.item())
+        train_loop.set_postfix(AUC=auc,train_loss=Tloss.item())
 
         Tloss.backward()
         optimizer.step()
@@ -329,7 +354,15 @@ for epoch in range(n_epochs):
         X_cts_test, X_dos_test, X_cln_test, y_test=X_cts_test.to(device), X_dos_test.to(device), X_cln_test.to(device), y_test.to(device)
         pred_test  = model1(X_cts_test, X_dos_test, X_cln_test)        
         Vloss = loss_fn(pred_test, y_test)
-        test_loop.set_postfix(test_loss=Vloss.item())
+        
+        try:
+            auc_test = roc_auc_score(y_test.cpu().detach().numpy().astype(int), pred_test.cpu().detach().numpy())
+            #auc_test = roc_auc_score(y_test.detach().numpy().astype(int), pred_test.detach().numpy())
+
+            #print(f"AUC : {auc}")
+        except ValueError:
+            pass
+        test_loop.set_postfix(AUC=auc_test,test_loss=Vloss.item())
         test_loss += Vloss.item()
     
     test_loss = test_loss/(batch+1)  
@@ -345,6 +378,7 @@ for epoch in range(n_epochs):
 plt.plot(list(range(epoch+1)), train_losses, label = 'Training')
 plt.plot(list(range(epoch+1)), test_losses,  label = 'Validation')
 plt.legend()
+plt.savefig(pth_path_cluster+'Learning_Curves.pdf',format='pdf')
 plt.xlabel("Epoch")
 
 

@@ -310,7 +310,7 @@ class RadiomicsCNN(nn.Module):
     def block(n_in, n_out, ks,pool):
         return nn.Sequential(nn.Conv3d(in_channels = n_in, out_channels = n_out, kernel_size = ks),
             nn.BatchNorm3d(n_out),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.MaxPool3d(kernel_size = pool))
             
            
