@@ -3,9 +3,9 @@
 #SBATCH --job-name=Radiomics   # name of the job
 #SBATCH --partition=casus    # partition to be used (defq, gpu or intel)
 #SBATCH --time=19:00:00       # walltime (up to 96 hours)
-#SBATCH --mem 70000
+#SBATCH --mem 100000
 #SBATCH -p gpu
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:2
 #SBATCH --nodes=1          # number of nodes
 #SBATCH --ntasks=1     # number of tasks (i.e. parallel processes) to be started
 
