@@ -34,15 +34,15 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
 #%% Hyperparameters
-bs = 6
+bs = 4
 n_epochs =1000
-learning_rate = 0.001 #0.01
+learning_rate = 0.0005 #0.01
 loss_fn = nn.BCELoss()
 
 
 #%% Extract clinical data and outcome
 #%%% Path
-pth_name="radiomics3dCNN_0912_added_val"
+pth_name="radiomics3dCNN_0912_added_val_tosave_scheduler"
 path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
@@ -298,6 +298,7 @@ model1.to(device)
 
 train_losses = []
 test_losses = []
+best_valid_loss=float('inf')
 for epoch in range(n_epochs):
     train_loss = 0
 
@@ -322,7 +323,7 @@ for epoch in range(n_epochs):
         train_loss += Tloss.item()
         
     train_loss = train_loss/(batch+1)        
-    #scheduler.step(train_loss)
+    scheduler.step(train_loss)
     train_losses.append(train_loss)
     
     # Model validation
@@ -338,11 +339,14 @@ for epoch in range(n_epochs):
         Vloss = loss_fn(pred_test, y_test)
         #test_loop.set_postfix(test_loss=Vloss.item())
         test_loss += Vloss.item()
-    
+    if test_loss < best_valid_loss:
+        best_valid_loss=test_loss
+        torch.save(model1.state_dict(), pth_file_name+'.pth')
+
+        
     test_loss = test_loss/(batch+1)  
     test_losses.append(test_loss)
     
-    torch.save(model1.state_dict(), pth_file_name+'.pth')
 
     # Plot results
     if epoch%20 == 0 and epoch != 0:
