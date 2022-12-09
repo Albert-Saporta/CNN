@@ -136,24 +136,18 @@ class RadiomicsCNN(nn.Module):
         # Convolution layers
         n_in  = 2
         n_out = 1
-        self.conv1 = RadiomicsCNN.block( n_in,  32, ks,pool)
-        self.conv2 = RadiomicsCNN.block( 32,  64, ks,pool)
-        self.conv3 = RadiomicsCNN.block( 64,  128, ks,pool)
+        self.conv1 = RadiomicsCNN.block(n_in,32,ks,pool)
+        self.conv2 = RadiomicsCNN.block(32,64,ks,pool)
+        self.conv3 = RadiomicsCNN.block(64,128,ks,pool)
+        self.conv4 = RadiomicsCNN.block(128,256,ks,pool)
+        self.conv5 = RadiomicsCNN.block(256,512,ks,pool)
 
 
-     
-      
-        
-        # Pooling layers
-    
         # Flattening
         self.flat = nn.Flatten()
         
         # Fully-conneceted layers 
-        
-        # FC 1: make the size of x equal to the of the clinical path
-
-        
+        # FC 1: make the size of x equal to the size of the clinical path
         I1, P, K, S = dim1, 0, ks, 1
         O1 = (I1 - K + 2*P) / S + 1 
         O1 = (O1 - pool)/pool + 1
@@ -168,7 +162,7 @@ class RadiomicsCNN(nn.Module):
         O3 = (I3 - K + 2*P) / S + 1 
         O3 = (O3 - pool)/pool + 1
         O3 = int(O3)
-        self.fc1 = nn.Linear(506880, n_cln)
+        self.fc1 = nn.Linear(30720, n_cln)#506880
         self.fc1_bn = nn.BatchNorm1d(n_cln)
         
         # FC 2: expand the features after concatination
@@ -192,6 +186,9 @@ class RadiomicsCNN(nn.Module):
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
+
 
         
         x = self.flat(x)
@@ -207,13 +204,13 @@ class RadiomicsCNN(nn.Module):
 
         # Last FCs
         x_final = F.rrelu(self.fc2_bn(self.fc2(x_final)))
-        x_final = torch.sigmoid(self.fc3_bn( self.fc3(x_final)))
+        x_final = torch.sigmoid(self.fc3_bn(self.fc3(x_final)))
 
         return x_final.squeeze()    
     
     @staticmethod
     def block(n_in, n_out, ks,pool):
-        return nn.Sequential(nn.Conv3d(in_channels = n_in, out_channels = n_out, kernel_size = ks,padding=0),
+        return nn.Sequential(nn.Conv3d(in_channels = n_in, out_channels = n_out, kernel_size = ks,padding=1),
             nn.LeakyReLU(),
             nn.MaxPool3d(kernel_size = pool),
             nn.BatchNorm3d(n_out),

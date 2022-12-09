@@ -33,7 +33,6 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
-
 #%% Hyperparameters
 bs = 4
 n_epochs =1000
@@ -43,7 +42,7 @@ loss_fn = nn.BCELoss()
 
 #%% Extract clinical data and outcome
 #%%% Path
-pth_name="radiomics3dCNN_0912"
+pth_name="radiomics3dCNN_0912_2"
 path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
@@ -276,19 +275,15 @@ y_train, y_test         = y[train],           y[test]
 X_cts_train  = torch.tensor(X_cts_train).float().unsqueeze(1)
 X_dos_train  = torch.tensor(X_dos_train).float().unsqueeze(1)
 X_cln_train  = torch.tensor(X_cln_train).float().unsqueeze(1)
-# X_dvh_train  = torch.tensor(X_dvh_train).float().unsqueeze(1)
 y_train      = torch.tensor(y_train).float()
 
 X_cts_test  = torch.tensor(X_cts_test).float().unsqueeze(1)
 X_dos_test  = torch.tensor(X_dos_test).float().unsqueeze(1)
 X_cln_test  = torch.tensor(X_cln_test).float().unsqueeze(1)
-# X_dvh_test  = torch.tensor(X_dvh_test).float().unsqueeze(1)
 y_test      = torch.tensor(y_test).float()
 
 
 # Combine datasets
-
-
 train_set = TensorDataset(X_cts_train, X_dos_train, X_cln_train, y_train)
 train_loader = DataLoader(train_set, batch_size = bs,pin_memory=True,shuffle=True) 
 
@@ -302,7 +297,6 @@ model1.to(device)
 
 train_losses = []
 test_losses = []
-plt.figure(figsize = (4,4))
 for epoch in range(n_epochs):
     train_loss = 0
 
@@ -347,8 +341,6 @@ for epoch in range(n_epochs):
         X_cts_test, X_dos_test, X_cln_test, y_test=X_cts_test.to(device), X_dos_test.to(device), X_cln_test.to(device), y_test.to(device)
         pred_test  = model1(X_cts_test, X_dos_test, X_cln_test)        
         Vloss = loss_fn(pred_test, y_test)
-        
-    
         #test_loop.set_postfix(test_loss=Vloss.item())
         test_loss += Vloss.item()
     
@@ -361,8 +353,9 @@ for epoch in range(n_epochs):
     if epoch%20 == 0 and epoch != 0:
       print(f"[{epoch:>3d}] \t Train : {train_loss:0.5f} \t Test : {test_loss:0.5f}")
 
-#%% Evaluatio
+#%% Evaluation
 #%%% Learning curve
+#plt.figure(figsize = (4,4))
 plt.figure()
 plt.plot(list(range(epoch+1)), train_losses, label = 'Training')
 plt.plot(list(range(epoch+1)), test_losses,  label = 'Validation')
@@ -387,7 +380,6 @@ for batch, (x_test, x_ct_test, x_clinical_test, y_test) in enumerate(test_loader
 
 # Calculate AUC
 auc = roc_auc_score(y_true.cpu().detach().numpy().astype(int), y_pred.cpu().detach().numpy())
-
 print(f"AUC : {auc}")
 
 #%%% Plot ROC Curve
@@ -402,21 +394,15 @@ plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.savefig(pth_path_cluster+'ROC_Curves.pdf',format='pdf')
 plt.show()
-#%%% Confusion matrix
-
-        
+#%%% Confusion matrix 
 thr = .2
 CM = confusion_matrix(y_true.cpu().detach().numpy().astype(int), to_labels(y_pred.cpu().detach().numpy(), thr).astype(int))
-
-df_cm = pd.DataFrame(CM, index = [i for i in "PN"],
-                  columns = [i for i in "PN"])
+df_cm = pd.DataFrame(CM, index = [i for i in "PN"],columns = [i for i in "PN"])
 plt.figure()
 sns.heatmap(df_cm, annot=True, cmap = 'Blues')
 plt.savefig(pth_path_cluster+'Confusion_Matrix.pdf',format='pdf')
 plt.show()
 #%%% Precision recall curve
-
-
 prec, recall, thr2 = precision_recall_curve(y_true.cpu().detach().numpy().astype(int), to_labels(y_pred.cpu().detach().numpy(), thr).astype(int))
 plt.figure()
 plt.plot(recall, prec, 'orange', lw=2)
