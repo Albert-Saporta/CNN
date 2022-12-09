@@ -12,7 +12,7 @@ import pandas as pd
 import seaborn as sns
 from numpy import random
 import matplotlib.pyplot as plt 
-from os import listdir
+from os import listdir, mkdir
 from os.path import isfile, join
 from scipy import ndimage
 from scipy.stats import mannwhitneyu
@@ -36,22 +36,24 @@ from torch.autograd import Variable
 
 #%% Hyperparameters
 bs = 4
-n_epochs =1000
+n_epochs =2
 learning_rate = 0.001 #0.01
 loss_fn = nn.BCELoss()
 
 
 #%% Extract clinical data and outcome
 #%%% Path
+pth_name="radiomics3dCNN_0912"
 path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
-pth_path_cluster="/bigdata/casus/optima/"
+pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/"
 
 
-pth_file_name=pth_path_cluster+"radiomics3dCNN_0812"
+pth_file_name=pth_path_cluster+pth_name
 path=path_cluster
 device = torch.device("cuda")
+os.mkdir(pth_path_cluster)
 
 """
 pth_file_name=pth_path_local+"radiomics3dCNN_0712"
@@ -325,16 +327,10 @@ for epoch in range(n_epochs):
         # forward + backward + optimize
         pred_train = model1(X_cts_train, X_dos_train, X_cln_train)
         
-        try:
-            auc = roc_auc_score(y_train.cpu().detach().numpy().astype(int), pred_train.cpu().detach().numpy())
-            #auc = roc_auc_score(y_train.detach().numpy().astype(int), pred_train.detach().numpy())
-
-            #print(f"AUC : {auc}")
-        except ValueError:
-            pass
+  
         
         Tloss = loss_fn(pred_train, y_train)
-        train_loop.set_postfix(AUC=auc,train_loss=Tloss.item())
+        #train_loop.set_postfix(train_loss=Tloss.item())
 
         Tloss.backward()
         optimizer.step()
@@ -357,14 +353,8 @@ for epoch in range(n_epochs):
         pred_test  = model1(X_cts_test, X_dos_test, X_cln_test)        
         Vloss = loss_fn(pred_test, y_test)
         
-        try:
-            auc_test = roc_auc_score(y_test.cpu().detach().numpy().astype(int), pred_test.cpu().detach().numpy())
-            #auc_test = roc_auc_score(y_test.detach().numpy().astype(int), pred_test.detach().numpy())
-
-            #print(f"AUC : {auc}")
-        except ValueError:
-            pass
-        test_loop.set_postfix(AUC=auc_test,test_loss=Vloss.item())
+    
+        #test_loop.set_postfix(test_loss=Vloss.item())
         test_loss += Vloss.item()
     
     test_loss = test_loss/(batch+1)  
@@ -376,9 +366,67 @@ for epoch in range(n_epochs):
     if epoch%20 == 0 and epoch != 0:
       print(f"[{epoch:>3d}] \t Train : {train_loss:0.5f} \t Test : {test_loss:0.5f}")
 
-
+#%% Evaluatio
+#%%% Learning curve
+plt.figure()
 plt.plot(list(range(epoch+1)), train_losses, label = 'Training')
 plt.plot(list(range(epoch+1)), test_losses,  label = 'Validation')
 plt.legend()
-plt.savefig(pth_path_cluster+'Learning_Curves.pdf',format='pdf')
 plt.xlabel("Epoch")
+plt.savefig(pth_path_cluster+'Learning_Curves.pdf',format='pdf')
+plt.show()
+#%%% 
+#%% validation. to do save model and use another code
+
+
+y_true = torch.Tensor([]).to(device)
+y_pred = torch.Tensor([]).to(device)
+batch_accuracy = 0
+for batch, (x_test, x_ct_test, x_clinical_test, y_test) in enumerate(test_loader):
+    pred   = CNN3D(x_test.to(device), x_ct_test.to(device), x_clinical_test.to(device))        
+    y_true = torch.cat((y_true,y_test.to(device)))
+    y_pred = torch.cat((y_pred,pred))
+
+
+# Calculate AUC
+auc = roc_auc_score(y_true.cpu().detach().numpy().astype(int), y_pred.cpu().detach().numpy())
+
+print(f"AUC : {auc}")
+
+#%%% Plot ROC Curve
+fpr, tpr, thr = roc_curve(y_true.cpu().detach().numpy(), y_pred.cpu().detach().numpy())
+plt.figure()
+plt.plot(fpr,tpr, 'b', label = f"AUC = {auc:0.3f}")
+plt.plot([0, 1], [0, 1],'r--', label = 'Chance')
+plt.xlim([-0.01, 1.01])
+plt.ylim([-0.01, 1.01])
+plt.legend()
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.savefig(pth_path_cluster+'ROC_Curves.pdf',format='pdf')
+plt.show()
+#%%% Confusion matrix
+
+        
+thr = .2
+CM = confusion_matrix(y_true.cpu().detach().numpy().astype(int), to_labels(y_pred.cpu().detach().numpy(), thr).astype(int))
+
+df_cm = pd.DataFrame(CM, index = [i for i in "PN"],
+                  columns = [i for i in "PN"])
+plt.figure()
+sns.heatmap(df_cm, annot=True, cmap = 'Blues')
+plt.savefig(pth_path_cluster+'Confusion_Matrix.pdf',format='pdf')
+plt.show()
+#%%% Precision recall curve
+
+
+prec, recall, thr2 = precision_recall_curve(y_true.cpu().detach().numpy().astype(int), to_labels(y_pred.cpu().detach().numpy(), thr).astype(int))
+plt.figure()
+plt.plot(recall, prec, 'orange', lw=2)
+no_skill = len(y_true[y_true==1]) / len(y_true)
+plt.plot([0, 1], [no_skill, no_skill], '--')
+plt.legend()
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.savefig(pth_path_cluster+'PR_curve.pdf',format='pdf')
+plt.show()

@@ -501,4 +501,5 @@ def plot_dsc(dsc_dist):
     s, (width, height) = canvas.print_to_buffer()
     return np.fromstring(s, np.uint8).reshape((height, width, 4))
 
-
+def to_labels(pos_probs, threshold):
+        return (pos_probs >= threshold).astype('int')
