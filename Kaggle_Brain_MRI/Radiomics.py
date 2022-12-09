@@ -54,7 +54,7 @@ pth_file_name=pth_path_cluster+pth_name
 path=path_cluster
 device = torch.device("cuda")
 os.mkdir(pth_path_cluster)
-
+print(torch.cuda.get_device_name(device=device))
 """
 pth_file_name=pth_path_local+"radiomics3dCNN_0712"
 path=path_local
