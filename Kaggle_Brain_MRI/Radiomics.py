@@ -36,7 +36,7 @@ from torch.autograd import Variable
 
 #%% Hyperparameters
 bs = 4
-n_epochs =2
+n_epochs =1000
 learning_rate = 0.001 #0.01
 loss_fn = nn.BCELoss()
 
@@ -54,7 +54,7 @@ pth_file_name=pth_path_cluster+pth_name
 path=path_cluster
 device = torch.device("cuda")
 os.mkdir(pth_path_cluster)
-print(torch.cuda.get_device_name(device=device))
+#print(torch.cuda.get_device_name(device=device))
 """
 pth_file_name=pth_path_local+"radiomics3dCNN_0712"
 path=path_local
@@ -68,11 +68,7 @@ df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM'
 #%%% P
 
 n_patients = 56
-"""
-dim1 = 194
-dim2 = 256
-dim3 = 256
-"""
+
 
 dim1 = 185 - 70
 dim2 = 170 - 30
@@ -223,7 +219,6 @@ for i in range(25):
 #Use a  CNN to predict the outcome from CT scans, dose maps and patient-specific clinical variables
 #The model is composed on 2 paths; one to extract features from the images and the other process clinical variables
 #concatenate both paths before prediction
-#read https://aapm.onlinelibrary.wiley.com/doi/10.1002/mp.13122
 
  
 #%% model
@@ -251,7 +246,7 @@ model1 = model1.apply(weights_init)
 #%%% Normalization
 
 
-""" use scikit learn standard scaler"""
+# use scikit learn standard scaler
 # Normalize continuous clinical variables!! use fit on train and transform on test!!
 
 
@@ -377,13 +372,7 @@ plt.savefig(pth_path_cluster+'Learning_Curves.pdf',format='pdf')
 plt.show()
 #%%% 
 #%% validation. to do save model and use another code
-"""
-CNN3D = RadiomicsCNN(dim1,dim2,dim3,n_cln)
-state_dict = torch.load(pth, map_location=device)
-CNN3D.load_state_dict(state_dict)
-CNN3D.eval()
-CNN3D.to(device)
-"""
+
 CNN3D=model1.eval()
 
 
