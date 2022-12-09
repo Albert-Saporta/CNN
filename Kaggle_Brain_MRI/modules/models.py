@@ -141,8 +141,6 @@ class RadiomicsCNN(nn.Module):
         self.conv3 = RadiomicsCNN.block(64,128,ks,pool)
         self.conv4 = RadiomicsCNN.block(128,256,ks,pool)
         self.conv5 = RadiomicsCNN.block(256,512,ks,pool)
-
-
         # Flattening
         self.flat = nn.Flatten()
         
@@ -162,6 +160,7 @@ class RadiomicsCNN(nn.Module):
         O3 = (I3 - K + 2*P) / S + 1 
         O3 = (O3 - pool)/pool + 1
         O3 = int(O3)
+        
         self.fc1 = nn.Linear(30720, n_cln)#506880
         self.fc1_bn = nn.BatchNorm1d(n_cln)
         

@@ -34,7 +34,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
 #%% Hyperparameters
-bs = 4
+bs = 6
 n_epochs =1000
 learning_rate = 0.001 #0.01
 loss_fn = nn.BCELoss()
@@ -42,7 +42,7 @@ loss_fn = nn.BCELoss()
 
 #%% Extract clinical data and outcome
 #%%% Path
-pth_name="radiomics3dCNN_0912_2"
+pth_name="radiomics3dCNN_0912_added_val"
 path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
@@ -84,12 +84,12 @@ n_cln = len(features)
 p_id = list(range(1, n_patients+1))
 p_id = [format(idx, '03d') for idx in p_id]  
 
-X_cts = np.zeros( (len(p_id), dim1, dim2, dim3) )      # CT scans - 3D
-X_dos = np.zeros( (len(p_id), dim1, dim2, dim3) )      # dose maps - 3D
-X_cln = np.zeros( (len(p_id), n_cln) )                 # clinical variables - 1D
-X_gtv = np.zeros( (len(p_id), dim1, dim2, dim3) )      # GTV contours  - 3D
+X_cts = np.zeros((len(p_id), dim1, dim2, dim3))      # CT scans - 3D
+X_dos = np.zeros((len(p_id), dim1, dim2, dim3))      # dose maps - 3D
+X_cln = np.zeros((len(p_id), n_cln))                 # clinical variables - 1D
+X_gtv = np.zeros((len(p_id), dim1, dim2, dim3))      # GTV contours  - 3D
 
-y     = np.zeros( (len(p_id) ) ) # outcomes - binary
+y = np.zeros((len(p_id))) # outcomes - binary
 
 # Read data
 for ip, p in enumerate(p_id):
@@ -261,12 +261,15 @@ X_cts=X_cts/X_cts.max()
 #%%% train and test set
 #Split data
 train = [int(x) for x in range(int(0.7*n_patients))]
-test  = [x for x in range(n_patients-1) if x not in train] 
+#test  = [x for x in range(n_patients-1) if x not in train]
+test=[39,40,41,42,43,44,45,46,47,48,49]
+val=[50,51,52,53,54,55]
+print(train,test,val)
 
-X_dos_train, X_dos_test = X_dos[train,:,:,:], X_dos[test,:,:,:]
-X_cts_train, X_cts_test = X_cts[train,:,:],   X_cts[test,:,:,:]
-X_cln_train, X_cln_test = X_cln[train,:],     X_cln[test,:]
-y_train, y_test         = y[train],           y[test]
+X_dos_train, X_dos_test,X_dos_val = X_dos[train,:,:,:], X_dos[test,:,:,:],X_dos[val,:,:,:]
+X_cts_train, X_cts_test,X_cts_val = X_cts[train,:,:], X_cts[test,:,:,:],X_cts[val,:,:,:]
+X_cln_train, X_cln_test, X_cln_val = X_cln[train,:], X_cln[test,:],X_cln[val,:]
+y_train, y_test,y_val = y[train], y[test], y[val]
 
 
 
@@ -282,6 +285,11 @@ X_dos_test  = torch.tensor(X_dos_test).float().unsqueeze(1)
 X_cln_test  = torch.tensor(X_cln_test).float().unsqueeze(1)
 y_test      = torch.tensor(y_test).float()
 
+X_cts_val  = torch.tensor(X_cts_val).float().unsqueeze(1)
+X_dos_val  = torch.tensor(X_dos_val).float().unsqueeze(1)
+X_cln_val  = torch.tensor(X_cln_val).float().unsqueeze(1)
+y_val      = torch.tensor(y_val).float()
+
 
 # Combine datasets
 train_set = TensorDataset(X_cts_train, X_dos_train, X_cln_train, y_train)
@@ -289,6 +297,9 @@ train_loader = DataLoader(train_set, batch_size = bs,pin_memory=True,shuffle=Tru
 
 test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
 test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True)
+
+val_set = TensorDataset(X_cts_val, X_dos_val, X_cln_val, y_val)
+val_loader = DataLoader(val_set, batch_size = 2,pin_memory=True,shuffle=False)
 
 #%% training
 
@@ -309,18 +320,12 @@ for epoch in range(n_epochs):
         X_cts_train, X_dos_train, X_cln_train, y_train=X_cts_train.to(device), X_dos_train.to(device), X_cln_train.to(device), y_train.to(device)
         # loss function
         #loss_fn = nn.BCELoss()
-
         # zero the parameter gradients
         optimizer.zero_grad()
-    
         # forward + backward + optimize
         pred_train = model1(X_cts_train, X_dos_train, X_cln_train)
-        
-  
-        
         Tloss = loss_fn(pred_train, y_train)
         #train_loop.set_postfix(train_loss=Tloss.item())
-
         Tloss.backward()
         optimizer.step()
         
@@ -372,9 +377,9 @@ CNN3D=model1.eval()
 y_true = torch.Tensor([]).to(device)
 y_pred = torch.Tensor([]).to(device)
 batch_accuracy = 0
-for batch, (x_test, x_ct_test, x_clinical_test, y_test) in enumerate(test_loader):
-    pred   = CNN3D(x_test.to(device), x_ct_test.to(device), x_clinical_test.to(device))        
-    y_true = torch.cat((y_true,y_test.to(device)))
+for batch, (x_val, x_ct_val, x_clinical_val, y_val) in enumerate(val_loader):
+    pred   = CNN3D(x_val.to(device), x_ct_val.to(device), x_clinical_val.to(device))        
+    y_true = torch.cat((y_true,y_val.to(device)))
     y_pred = torch.cat((y_pred,pred))
 
 
