@@ -63,20 +63,12 @@ device = torch.device("cuda")
 #%%% Clinical data
 df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
 
-
-#%%% P
-
 n_patients = 56
-
 
 dim1 = 185 - 70
 dim2 = 170 - 30
 dim3 = 230 - 40
 
-
-
-
-# Clinical data and outcomes
 features = ['Sex', 'Age', 'Stage']
 n_cln = len(features)
 
@@ -90,8 +82,7 @@ X_cln = np.zeros((len(p_id), n_cln))                 # clinical variables - 1D
 X_gtv = np.zeros((len(p_id), dim1, dim2, dim3))      # GTV contours  - 3D
 
 y = np.zeros((len(p_id))) # outcomes - binary
-
-# Read data
+#%%% Read image data
 for ip, p in enumerate(p_id):
     
     if ip%5 == 0:
@@ -124,8 +115,7 @@ for ip, p in enumerate(p_id):
     X_gtv[ip, :, :, :] = image
     """
  
-print()
-        
+print()  
 print(f"{sum(y)}/{len(y)} patients are positive")
 
 #%%% Diplay some slices
@@ -264,7 +254,7 @@ train = [int(x) for x in range(int(0.7*n_patients))]
 #test  = [x for x in range(n_patients-1) if x not in train]
 test=[39,40,41,42,43,44,45,46,47,48,49]
 val=[50,51,52,53,54,55]
-print(train,test,val)
+#print(train,test,val)
 
 X_dos_train, X_dos_test,X_dos_val = X_dos[train,:,:,:], X_dos[test,:,:,:],X_dos[val,:,:,:]
 X_cts_train, X_cts_test,X_cts_val = X_cts[train,:,:], X_cts[test,:,:,:],X_cts[val,:,:,:]
