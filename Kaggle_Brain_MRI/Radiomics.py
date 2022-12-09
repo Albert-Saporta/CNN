@@ -377,6 +377,14 @@ plt.savefig(pth_path_cluster+'Learning_Curves.pdf',format='pdf')
 plt.show()
 #%%% 
 #%% validation. to do save model and use another code
+"""
+CNN3D = RadiomicsCNN(dim1,dim2,dim3,n_cln)
+state_dict = torch.load(pth, map_location=device)
+CNN3D.load_state_dict(state_dict)
+CNN3D.eval()
+CNN3D.to(device)
+"""
+CNN3D=model1.eval()
 
 
 y_true = torch.Tensor([]).to(device)
