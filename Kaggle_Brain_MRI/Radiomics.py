@@ -34,7 +34,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
 #%% Hyperparameters
-bs = 4
+bs = 6
 n_epochs =1000
 learning_rate = 0.0005 #0.01
 loss_fn = nn.BCELoss()
@@ -42,25 +42,30 @@ loss_fn = nn.BCELoss()
 
 #%% Extract clinical data and outcome
 #%%% Path
-pth_name="radiomics3dCNN_1212_added_norm_recall1"
+pth_name="radiomics3dCNN_1212_added_norm_recall"
 path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/"
 
-
+"""
 pth_file_name=pth_path_cluster+pth_name
 path=path_cluster
 device = torch.device("cuda")
-if os.path.exists(pth_path_cluster)==False:
-    os.mkdir(pth_path_cluster)
+
+
 #print(torch.cuda.get_device_name(device=device))
 """
 pth_file_name=pth_path_local+"radiomics3dCNN_0712"
 path=path_local
 device = torch.device("cuda")
-"""
 
+"""
+if os.path.exists(pth_path_cluster)==True:
+    pass
+elif os.path.exists(pth_path_cluster)==False:
+    os.mkdir(pth_path_cluster)
+"""
 #%%% Clinical data
 df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
 
@@ -118,93 +123,6 @@ for ip, p in enumerate(p_id):
  
 print()  
 print(f"{sum(y)}/{len(y)} patients are positive")
-
-#%%% Diplay some slices
-"""
-slc = 60
-fig, axs = plt.subplots(5,5, figsize=(20, 20))
-fig.subplots_adjust(hspace = .1, wspace=.001)
-axs = axs.ravel()
-
-for i in range(25):
-    axs[i].imshow(X_cts[i, slc,:,:], cmap=plt.cm.Greys_r)
-    axs[i].set_title(f"patient {i+1}")
-"""   
-
-#%% Statistical significance and p value
-"""
-U    = np.zeros((dim1, dim2, dim3))
-pval = np.ones((dim1, dim2, dim3))
-
-# For each voxel
-for ii in range(dim1):
-    for jj in range(dim2):
-        for kk in range(dim3):
-            
-            # Combine voxel doses of neg/pos patients together
-            group_0 = X_dos[:,ii,jj,kk] [y == 0]
-            group_1 = X_dos[:,ii,jj,kk] [y == 1]
-            
-            if sum(group_1) == 0:
-                continue
-            # Run statistical test to determine if they are significantly different
-            # This is a 2 sample test
-            # We have not checked the data distrubtion 
-            # So we will use a non-parametric test: Mann–Whitney U test
-            # Other tests include Student's t-test, Wilcoxon test, Karuskal-Wallis, etc
-            # Each test has its own adjavntages and disadvantages
-            
-            U[ii,jj,kk], pval[ii,jj,kk]= mannwhitneyu(group_0, group_1)
-    
-    if ii%10 == 0: 
-        print(f"Slice {ii}")
-        
-sl = 25
-sns.heatmap(-np.log( pval[sl,:,:] ), cbar_kws = {'label': '-log(p)'}, cmap = 'gray_r')
-            
-#%%% significance
-alpha = 0.05 # significance level
-hits = np.zeros((dim1, dim2, dim3))
-hits[ pval < alpha ] = 1
-
-sns.heatmap(hits[sl,:,:], cmap = 'gray_r')
-print(f"Total number of hits : {hits.sum().astype(int)}/{dim1*dim2*dim3}")
-
-#%%%
-
-# Bonferroni correction
-m = (dim1*dim2*dim3)
-alpha = 0.05
-alpha = alpha/m
-hits = np.zeros((dim1, dim2, dim3))
-hits[ pval < alpha ] = 1
-
-sns.heatmap(hits[sl,:,:], cmap = 'gray_r')
-plt.figure(figsize=(4, 4))
-plt.title("After Correction")
-plt.title(f"After correction:      hits : {hits.sum().astype(int)}")
-"""
-# Reduce the images further
-"""
-RF = 0.2
-
-x_cts = ndimage.zoom(X_cts, (1, RF, RF, RF))
-x_dos = ndimage.zoom(X_dos, (1, RF, RF, RF))
-
-dim1, dim2, dim3 = np.shape(x_cts)[1], np.shape(x_cts)[2], np.shape(x_cts)[3]
-
-print(f"number of voxels after resampling = {dim1*dim2*dim3}")
-
-# Let's check now how it looks like
-fig, axs = plt.subplots(5,5, figsize=(20, 20))
-fig.subplots_adjust(hspace = .1, wspace=.001)
-axs = axs.ravel()
-slc = 15
-
-for i in range(25):
-    axs[i].imshow(x_cts[i, slc,:,:], cmap=plt.cm.Greys_r)
-    axs[i].set_title(f"patient {i+1}")
-"""  
 #%% Outcome Modeling
 #Use a  CNN to predict the outcome from CT scans, dose maps and patient-specific clinical variables
 #The model is composed on 2 paths; one to extract features from the images and the other process clinical variables
@@ -308,7 +226,7 @@ test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
 test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True)
 
 val_set = TensorDataset(X_cts_val, X_dos_val, X_cln_val, y_val)
-val_loader = DataLoader(val_set, batch_size = 2,pin_memory=True,shuffle=False)
+val_loader = DataLoader(val_set, batch_size = 6,pin_memory=True,shuffle=False)
 
 #%% training
 
