@@ -48,7 +48,7 @@ path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHa
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/"
 
-"""
+
 pth_file_name=pth_path_cluster+pth_name
 path=path_cluster
 device = torch.device("cuda")
@@ -59,13 +59,13 @@ device = torch.device("cuda")
 pth_file_name=pth_path_local+"radiomics3dCNN_0712"
 path=path_local
 device = torch.device("cuda")
-
 """
+
 if os.path.exists(pth_path_cluster)==True:
     pass
 elif os.path.exists(pth_path_cluster)==False:
     os.mkdir(pth_path_cluster)
-"""
+
 #%%% Clinical data
 df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
 
