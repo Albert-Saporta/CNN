@@ -21,7 +21,7 @@ from sklearn.model_selection import train_test_split,StratifiedKFold
 from sklearn.utils import resample
 
 # for evaluating the model
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix,recall_score
 from sklearn.metrics import roc_auc_score, auc, roc_curve, precision_recall_curve
 from scipy import interp
 
@@ -355,6 +355,8 @@ for epoch in range(n_epochs):
         X_cts_test, X_dos_test, X_cln_test, y_test=X_cts_test.to(device), X_dos_test.to(device), X_cln_test.to(device), y_test.to(device)
         pred_test  = model1(X_cts_test, X_dos_test, X_cln_test)        
         Vloss = loss_fn(pred_test, y_test)
+        recall=recall_score(y_test,pred_test)
+        print("recall",recall)
         #test_loop.set_postfix(test_loss=Vloss.item())
         test_loss += Vloss.item()
     if test_loss < best_valid_loss:
