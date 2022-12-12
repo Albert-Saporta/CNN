@@ -47,24 +47,25 @@ path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/"
+device = torch.device("cuda")
+#print(torch.cuda.get_device_name(device=device))
 
 
 pth_file_name=pth_path_cluster+pth_name
 path=path_cluster
-device = torch.device("cuda")
-
-
-#print(torch.cuda.get_device_name(device=device))
-"""
-pth_file_name=pth_path_local+"radiomics3dCNN_0712"
-path=path_local
-device = torch.device("cuda")
-"""
 
 if os.path.exists(pth_path_cluster)==True:
     pass
 elif os.path.exists(pth_path_cluster)==False:
     os.mkdir(pth_path_cluster)
+
+"""
+
+pth_file_name=pth_path_local+pth_name
+path=path_local
+"""
+
+
 
 #%%% Clinical data
 df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
@@ -131,7 +132,7 @@ print(f"{sum(y)}/{len(y)} patients are positive")
  
 #%% model
 model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
-print(model1)
+#print(model1)
 
 optimizer = Adam(model1.parameters(), lr = learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, \
@@ -215,7 +216,7 @@ test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
 test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True)
 
 val_set = TensorDataset(X_cts_val, X_dos_val, X_cln_val, y_val)
-val_loader = DataLoader(val_set, batch_size = 2,pin_memory=True,shuffle=True)
+val_loader = DataLoader(val_set, batch_size = 3,pin_memory=True,shuffle=True)
 
 #%% training
 
@@ -235,8 +236,6 @@ for epoch in range(n_epochs):
         train_loop.set_description(f'Epoch {epoch+1}/{n_epochs}')
         # print(y_train)
         X_cts_train, X_dos_train, X_cln_train, y_train=X_cts_train.to(device), X_dos_train.to(device), X_cln_train.to(device), y_train.to(device)
-        # loss function
-        #loss_fn = nn.BCELoss()
         # zero the parameter gradients
         optimizer.zero_grad()
         # forward + backward + optimize
@@ -263,8 +262,8 @@ for epoch in range(n_epochs):
         X_cts_test, X_dos_test, X_cln_test, y_test=X_cts_test.to(device), X_dos_test.to(device), X_cln_test.to(device), y_test.to(device)
         pred_test  = model1(X_cts_test, X_dos_test, X_cln_test)        
         Vloss = loss_fn(pred_test, y_test)
-        recall=recall_score(y_test.cpu().detach().numpy().astype(int),to_labels(pred_test.cpu().detach().numpy(),0.2).astype(int))
-        print("recall",recall)
+        #recall=recall_score(y_test.cpu().detach().numpy().astype(int),to_labels(pred_test.cpu().detach().numpy(),0.2).astype(int))
+        #print("recall",recall)
         #test_loop.set_postfix(test_loss=Vloss.item())
         test_loss += Vloss.item()
     if test_loss < best_valid_loss:
