@@ -42,7 +42,7 @@ loss_fn = nn.BCELoss()
 
 #%% Extract clinical data and outcome
 #%%% Path
-pth_name="radiomics3dCNN_1212_added_norm"
+pth_name="radiomics3dCNN_1212_added_norm_recall"
 path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
@@ -355,7 +355,7 @@ for epoch in range(n_epochs):
         X_cts_test, X_dos_test, X_cln_test, y_test=X_cts_test.to(device), X_dos_test.to(device), X_cln_test.to(device), y_test.to(device)
         pred_test  = model1(X_cts_test, X_dos_test, X_cln_test)        
         Vloss = loss_fn(pred_test, y_test)
-        recall=recall_score(y_test,pred_test)
+        recall=recall_score(y_test.cpu().detach().numpy(),pred_test.cpu().detach().numpy())
         print("recall",recall)
         #test_loop.set_postfix(test_loss=Vloss.item())
         test_loss += Vloss.item()
