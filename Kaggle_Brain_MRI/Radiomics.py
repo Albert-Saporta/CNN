@@ -42,7 +42,7 @@ loss_fn = nn.BCELoss()
 
 #%% Extract clinical data and outcome
 #%%% Path
-pth_name="radiomics3dCNN_0912_added_val_tosave_scheduler"
+pth_name="radiomics3dCNN_1212_added_norm"
 path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
@@ -233,7 +233,20 @@ model1 = model1.apply(weights_init)
 #%% Data preprocessing
 
 #%%% Normalization
-
+def normalize(arr, N=255, eps=1e-6):
+    """
+    TO normalize an image by mapping its [Min,Max] into the interval [0,255]
+    :param arr: Input (2D or 3D) array of image
+    :param N: Scaling factor
+    :param eps:
+    :return: Normalized Image
+    """
+    # N=255
+    # eps=1e-6
+    arr = arr.astype(np.float32)
+    #output=N*(arr+600)/2000
+    output = N*(arr-np.min(arr))/(np.max(arr)-np.min(arr)+eps)
+    return output
 
 # use scikit learn standard scaler
 # Normalize continuous clinical variables!! use fit on train and transform on test!!
@@ -243,11 +256,14 @@ var = 1 # index of 'Age'
 mean = X_cln[:,var].mean()
 std  = X_cln[:,var].std()
 X_cln[:,var] = (X_cln[:,var]-mean)/std
+print("norm_test cln",X_cln.min(),X_cln.max())
 
 
 X_dos=X_dos/X_dos.max()
-X_cts=X_cts/X_cts.max()
+print("norm_test dos",X_dos.min(),X_dos.max())
 
+X_cts=normalize(X_cts)#X_cts/X_cts.max()
+print("norm_test CT",X_cts.min(),X_cts.max())
 #%%% train and test set
 #Split data
 train = [int(x) for x in range(int(0.7*n_patients))]
