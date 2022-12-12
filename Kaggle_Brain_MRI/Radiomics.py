@@ -52,7 +52,8 @@ pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/
 pth_file_name=pth_path_cluster+pth_name
 path=path_cluster
 device = torch.device("cuda")
-os.mkdir(pth_path_cluster)
+if os.path.exists(pth_path_cluster)==False:
+    os.mkdir(pth_path_cluster)
 #print(torch.cuda.get_device_name(device=device))
 """
 pth_file_name=pth_path_local+"radiomics3dCNN_0712"
@@ -279,7 +280,7 @@ X_cts_train, X_cts_test,X_cts_val = X_cts[train,:,:], X_cts[test,:,:,:],X_cts[va
 X_cln_train, X_cln_test, X_cln_val = X_cln[train,:], X_cln[test,:],X_cln[val,:]
 y_train, y_test,y_val = y[train], y[test], y[val]
 
-
+print("test,val",y_test, y_val)
 
 
 # convert data to tensors
