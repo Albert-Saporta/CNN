@@ -246,6 +246,7 @@ def normalize(arr, N=255, eps=1e-6):
     arr = arr.astype(np.float32)
     #output=N*(arr+600)/2000
     output = N*(arr-np.min(arr))/(np.max(arr)-np.min(arr)+eps)
+    output=output/output.max()
     return output
 
 # use scikit learn standard scaler
@@ -255,7 +256,8 @@ def normalize(arr, N=255, eps=1e-6):
 var = 1 # index of 'Age'
 mean = X_cln[:,var].mean()
 std  = X_cln[:,var].std()
-X_cln[:,var] = (X_cln[:,var]-mean)/std
+#X_cln[:,var] = (X_cln[:,var]-mean)/std
+X_cln=X_cln/X_cln.max()
 print("norm_test cln",X_cln.min(),X_cln.max())
 
 
