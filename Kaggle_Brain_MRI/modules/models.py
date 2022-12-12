@@ -213,7 +213,7 @@ class RadiomicsCNN(nn.Module):
             nn.LeakyReLU(),
             nn.MaxPool3d(kernel_size = pool),
             nn.BatchNorm3d(n_out),
-            nn.Dropout())
+            nn.Dropout(p=0.2))
     #check the order: https://stackoverflow.com/questions/39691902/ordering-of-batch-normalization-and-dropout
             
            

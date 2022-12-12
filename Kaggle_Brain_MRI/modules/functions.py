@@ -500,6 +500,22 @@ def plot_dsc(dsc_dist):
     plt.close()
     s, (width, height) = canvas.print_to_buffer()
     return np.fromstring(s, np.uint8).reshape((height, width, 4))
-
+#%% Radiomics
 def to_labels(pos_probs, threshold):
         return (pos_probs >= threshold).astype('int')
+
+def normalize_CT(arr, N=255, eps=1e-6):
+    """
+    TO normalize an image by mapping its [Min,Max] into the interval [0,255]
+    :param arr: Input (2D or 3D) array of image
+    :param N: Scaling factor
+    :param eps:
+    :return: Normalized Image
+    """
+    # N=255
+    # eps=1e-6
+    arr = arr.astype(np.float32)
+    #output=N*(arr+600)/2000
+    output = N*(arr-np.min(arr))/(np.max(arr)-np.min(arr)+eps)
+    output=output/output.max()
+    return output

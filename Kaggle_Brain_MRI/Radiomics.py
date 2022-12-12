@@ -42,7 +42,7 @@ loss_fn = nn.BCELoss()
 
 #%% Extract clinical data and outcome
 #%%% Path
-pth_name="radiomics3dCNN_1212_added_norm_recall"
+pth_name="radiomics3dCNN_1212_added_norm_recall_batch1d_init"
 path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
@@ -142,7 +142,10 @@ def weights_init(m):
    if isinstance(m, nn.Conv3d):
        torch.nn.init.normal_(m.weight, 0.0, 0.02)
    if isinstance(m, nn.BatchNorm3d):
-       torch.nn.init.normal_(m.weight, 0.0, 0.02)
+       torch.nn.init.normal_(m.weight, 1.0, 0.02)
+       torch.nn.init.constant_(m.bias, 0)
+   if isinstance(m, nn.BatchNorm1d):
+       torch.nn.init.normal_(m.weight, 1.0, 0.02)
        torch.nn.init.constant_(m.bias, 0)
    if isinstance(m, nn.Linear):
        torch.nn.init.normal_(m.weight, 0.0, 0.02)
@@ -152,21 +155,7 @@ model1 = model1.apply(weights_init)
 #%% Data preprocessing
 
 #%%% Normalization
-def normalize(arr, N=255, eps=1e-6):
-    """
-    TO normalize an image by mapping its [Min,Max] into the interval [0,255]
-    :param arr: Input (2D or 3D) array of image
-    :param N: Scaling factor
-    :param eps:
-    :return: Normalized Image
-    """
-    # N=255
-    # eps=1e-6
-    arr = arr.astype(np.float32)
-    #output=N*(arr+600)/2000
-    output = N*(arr-np.min(arr))/(np.max(arr)-np.min(arr)+eps)
-    output=output/output.max()
-    return output
+
 
 # use scikit learn standard scaler
 # Normalize continuous clinical variables!! use fit on train and transform on test!!
@@ -183,14 +172,14 @@ print("norm_test cln",X_cln.min(),X_cln.max())
 X_dos=X_dos/X_dos.max()
 print("norm_test dos",X_dos.min(),X_dos.max())
 
-X_cts=normalize(X_cts)#X_cts/X_cts.max()
+X_cts=normalize_CT(X_cts)#X_cts/X_cts.max()
 print("norm_test CT",X_cts.min(),X_cts.max())
 #%%% train and test set
 #Split data
 train = [int(x) for x in range(int(0.7*n_patients))]
 #test  = [x for x in range(n_patients-1) if x not in train]
-test=[39,40,41,42,43,44,45,46,47,48,49]
-val=[50,51,52,53,54,55]
+test=[39,40,41,42,43,44,45,46]
+val=[47,48,49,50,51,52,53,54,55]
 #print(train,test,val)
 
 X_dos_train, X_dos_test,X_dos_val = X_dos[train,:,:,:], X_dos[test,:,:,:],X_dos[val,:,:,:]
@@ -226,7 +215,7 @@ test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
 test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True)
 
 val_set = TensorDataset(X_cts_val, X_dos_val, X_cln_val, y_val)
-val_loader = DataLoader(val_set, batch_size = 6,pin_memory=True,shuffle=False)
+val_loader = DataLoader(val_set, batch_size = 2,pin_memory=True,shuffle=True)
 
 #%% training
 
