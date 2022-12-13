@@ -48,7 +48,7 @@ pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/
 device = torch.device("cpu")
 #print(torch.cuda.get_device_name(device=device))
 
-"""
+
 pth_file_name=pth_path_cluster+pth_name
 path=path_cluster
 
@@ -61,7 +61,7 @@ elif os.path.exists(pth_path_cluster)==False:
 
 pth_file_name=pth_path_local+pth_name
 path=path_local
-
+"""
 
 
 
