@@ -279,7 +279,7 @@ class ResNet(nn.Module):
         x = self.layer3(x)
         #x = self.layer4(x)
 
-        
+        x = self.flat(x)
         x = F.rrelu(self.fc1_bn( self.fc1(x)))
         # Concatinate clinical variables
         x_cln = x_cln.squeeze(1)
