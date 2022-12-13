@@ -74,7 +74,7 @@ print(len(outputs))
 #print feature_maps
 for feature_map in outputs:
     print(feature_map.shape)
-    
+plt.imshow(outputs[15][0,500,:,:].data.cpu().numpy())   
 #%%%
 
 processed = []

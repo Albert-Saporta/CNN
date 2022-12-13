@@ -34,23 +34,21 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
 #%% Hyperparameters
-bs = 6
-n_epochs =1000
+bs = 1
+n_epochs =1#000
 learning_rate = 0.0005 #0.01
 loss_fn = nn.BCELoss()
-
-
 #%% Extract clinical data and outcome
 #%%% Path
-pth_name="radiomics3dCNN_1212_added_norm_recall_batch1d_init"
+pth_name="radiomics3dCNN_1312_resnet"
 path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/"
-device = torch.device("cuda")
+device = torch.device("cpu")
 #print(torch.cuda.get_device_name(device=device))
 
-
+"""
 pth_file_name=pth_path_cluster+pth_name
 path=path_cluster
 
@@ -63,7 +61,7 @@ elif os.path.exists(pth_path_cluster)==False:
 
 pth_file_name=pth_path_local+pth_name
 path=path_local
-"""
+
 
 
 
@@ -131,7 +129,8 @@ print(f"{sum(y)}/{len(y)} patients are positive")
 
  
 #%% model
-model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
+#model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
+model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [3, 4, 6, 3])
 #print(model1)
 
 optimizer = Adam(model1.parameters(), lr = learning_rate)
