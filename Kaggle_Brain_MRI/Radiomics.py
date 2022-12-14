@@ -34,7 +34,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
 #%% Hyperparameters
-bs = 4
+bs = 8
 n_epochs =1#000
 learning_rate = 0.0005 #0.01
 loss_fn = nn.BCELoss()
@@ -182,7 +182,7 @@ print("norm_test CT",X_cts.min(),X_cts.max())
 train = [int(x) for x in range(int(0.7*n_patients))]
 #test  = [x for x in range(n_patients-1) if x not in train]
 test=[39,40,41,42,43,44,45,46]
-val=[47,48,49,50,51,52,53,54,55]
+val=[47,48,49,50,51,52,53,54]#,55]
 #print(train,test,val)
 
 X_dos_train, X_dos_test,X_dos_val = X_dos[train,:,:,:], X_dos[test,:,:,:],X_dos[val,:,:,:]
@@ -218,7 +218,7 @@ test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
 test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True,num_workers=0)
 
 val_set = TensorDataset(X_cts_val, X_dos_val, X_cln_val, y_val)
-val_loader = DataLoader(val_set, batch_size = 3,pin_memory=True,shuffle=True)
+val_loader = DataLoader(val_set, batch_size = 4,pin_memory=True,shuffle=True,num_workers=0)
 
 #%% training
 
@@ -294,6 +294,7 @@ plt.show()
 #%% validation. to do save model and use another code
 
 CNN3D=model1.eval()
+print("device",device[0])
 
 
 y_true = torch.Tensor([]).to(device)
