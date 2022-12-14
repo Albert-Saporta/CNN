@@ -46,7 +46,7 @@ path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHa
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/"
 device = torch.device("cuda")
-#print(torch.cuda.get_device_name(device=device))
+print("# GPUs",torch.cuda.device_count())
 
 
 pth_file_name=pth_path_cluster+pth_name
@@ -132,7 +132,7 @@ print(f"{sum(y)}/{len(y)} patients are positive")
 #model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
 model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [1, 1, 1, 1])
 #print(model1)
-model1= nn.DataParallel(model1)
+
 optimizer = Adam(model1.parameters(), lr = learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, \
                         factor=0.5, patience=5, min_lr=0.00001*learning_rate,\
@@ -152,6 +152,9 @@ def weights_init(m):
        torch.nn.init.constant_(m.bias, 0)
             
 model1 = model1.apply(weights_init)
+
+model1= nn.DataParallel(model1)
+model1.to(device)
 #%% Data preprocessing
 
 #%%% Normalization
@@ -220,7 +223,6 @@ val_loader = DataLoader(val_set, batch_size = 3,pin_memory=True,shuffle=True)
 #%% training
 
 
-model1.to(device)
 
 train_losses = []
 test_losses = []
