@@ -6,7 +6,7 @@
 #SBATCH --mem 100000
 #SBATCH --nodes=1          # number of nodes
 ##SBATCH -C v100-32g
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:1,2
 #SBATCH --ntasks=2     # number of tasks (i.e. parallel processes) to be started
 #SBATCH --output=radiomics%j.out      # nom du fichier de sortie
 #SBATCH --error=radiomics%j.out       # nom du fichier d'erreur (ici commun avec la sortie)
