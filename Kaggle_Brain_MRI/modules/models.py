@@ -214,11 +214,16 @@ class ResidualBlock(nn.Module):
         
     def forward(self, x):
         residual = x
+        print("res shape",residual.shape)
         out = self.conv1(x)
         out = self.conv2(out)
         if self.downsample:
             residual = self.downsample(x)
+        print("res and out shape",residual.shape,out.shape)
+
         out += residual
+        print("final out shape",residual.shape,out.shape)
+
         out = self.relu(out)
         return out
 
@@ -257,7 +262,7 @@ class ResNet(nn.Module):
         if stride != 1 or self.inplanes != planes:
             
             downsample = nn.Sequential(
-                nn.Conv3d(self.inplanes, planes, kernel_size=2, stride=stride),#kernel size 1?
+                nn.Conv3d(self.inplanes, planes, kernel_size=3, stride=stride),#kernel size 1?
                 nn.BatchNorm3d(planes),
             )
         layers = []
