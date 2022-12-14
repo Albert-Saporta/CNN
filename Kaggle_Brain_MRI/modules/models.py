@@ -291,7 +291,7 @@ class ResNet(nn.Module):
         #x = self.avgpool(x)
   
 
-        return x         
+        return x_final.squeeze()    
                 
 
 #%%% DVH
