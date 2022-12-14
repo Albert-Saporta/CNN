@@ -153,8 +153,8 @@ def weights_init(m):
             
 model1 = model1.apply(weights_init)
 
-#model1= nn.DataParallel(model1)
-model1.to(device)
+model1= nn.DataParallel(model1,device_ids=[0, 1])
+#model1.to(device)
 #%% Data preprocessing
 
 #%%% Normalization
@@ -218,7 +218,7 @@ test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
 test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True,num_workers=0)
 
 val_set = TensorDataset(X_cts_val, X_dos_val, X_cln_val, y_val)
-val_loader = DataLoader(val_set, batch_size = 4,pin_memory=True,shuffle=True)
+val_loader = DataLoader(val_set, batch_size = 3,pin_memory=True,shuffle=True)
 
 #%% training
 
