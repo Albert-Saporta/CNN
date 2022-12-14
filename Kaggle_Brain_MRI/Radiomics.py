@@ -45,7 +45,7 @@ path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/"
-device = torch.device("cuda")
+device = torch.device("cuda:0,1")
 #print(torch.cuda.get_device_name(device=device))
 
 
@@ -132,7 +132,7 @@ print(f"{sum(y)}/{len(y)} patients are positive")
 #model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
 model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [1, 1, 1, 1])
 #print(model1)
-
+model1= nn.DataParallel(model1,device_ids = [0, 1])
 optimizer = Adam(model1.parameters(), lr = learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, \
                         factor=0.5, patience=5, min_lr=0.00001*learning_rate,\
