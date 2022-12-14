@@ -4,7 +4,7 @@
 #SBATCH --partition=casus    # partition to be used (defq, gpu or intel)
 #SBATCH --time=47:00:00       # walltime (up to 96 hours)
 #SBATCH --mem 100000
-#SBATCH --nodes=2         # number of nodes
+#SBATCH --nodes=1        # number of nodes
 ##SBATCH -C v100-32g
 #SBATCH --gres=gpu:2
 #SBATCH --ntasks=2     # number of tasks (i.e. parallel processes) to be started

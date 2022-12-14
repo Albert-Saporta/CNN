@@ -34,7 +34,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
 #%% Hyperparameters
-bs = 1
+bs = 4
 n_epochs =1#000
 learning_rate = 0.0005 #0.01
 loss_fn = nn.BCELoss()
@@ -129,8 +129,8 @@ print(f"{sum(y)}/{len(y)} patients are positive")
 
  
 #%% model
-#model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
-model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [1, 1, 1, 1])
+model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
+#model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [1, 1, 1, 1])
 #print(model1)
 
 optimizer = Adam(model1.parameters(), lr = learning_rate)
@@ -212,13 +212,13 @@ y_val      = torch.tensor(y_val).float()
 
 # Combine datasets
 train_set = TensorDataset(X_cts_train, X_dos_train, X_cln_train, y_train)
-train_loader = DataLoader(train_set, batch_size = bs,pin_memory=True,shuffle=True) 
+train_loader = DataLoader(train_set, batch_size = bs,pin_memory=True,shuffle=True,num_workers=2) 
 
 test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
-test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True)
+test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True,num_workers=2)
 
 val_set = TensorDataset(X_cts_val, X_dos_val, X_cln_val, y_val)
-val_loader = DataLoader(val_set, batch_size = 3,pin_memory=True,shuffle=True)
+val_loader = DataLoader(val_set, batch_size = 4,pin_memory=True,shuffle=True)
 
 #%% training
 
