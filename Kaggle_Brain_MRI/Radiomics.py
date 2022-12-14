@@ -129,9 +129,9 @@ print(f"{sum(y)}/{len(y)} patients are positive")
 
  
 #%% model
-model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
-#model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [1, 1, 1, 1])
-#print(model1)
+#model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
+model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [1, 1, 1])
+print(model1)
 
 optimizer = Adam(model1.parameters(), lr = learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, \
@@ -154,7 +154,7 @@ def weights_init(m):
 model1 = model1.apply(weights_init)
 
 model1= nn.DataParallel(model1,device_ids=[0, 1])
-#model1.to(device)
+model1.to(device)
 #%% Data preprocessing
 
 #%%% Normalization
@@ -294,7 +294,6 @@ plt.show()
 #%% validation. to do save model and use another code
 
 CNN3D=model1.eval()
-print("device",device[0])
 
 
 y_true = torch.Tensor([]).to(device)

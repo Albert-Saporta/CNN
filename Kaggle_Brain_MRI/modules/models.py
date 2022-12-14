@@ -235,7 +235,7 @@ class ResNet(nn.Module):
         self.layer0 = self._make_layer(block, 64, layers[0], stride = 1)
         self.layer1 = self._make_layer(block, 128, layers[1], stride = 1)
         self.layer2 = self._make_layer(block, 256, layers[2], stride = 1)
-        self.layer3 = self._make_layer(block, 512, layers[3], stride = 1)
+        #self.layer3 = self._make_layer(block, 512, layers[3], stride = 1)
         self.flat = nn.Flatten()
         # Fully-conneceted layers 
         # FC 1: make the size of x equal to the size of the clinical path
@@ -257,7 +257,7 @@ class ResNet(nn.Module):
         if stride != 1 or self.inplanes != planes:
             
             downsample = nn.Sequential(
-                nn.Conv3d(self.inplanes, planes, kernel_size=1, stride=stride),
+                nn.Conv3d(self.inplanes, planes, kernel_size=2, stride=stride),#kernel size 1?
                 nn.BatchNorm3d(planes),
             )
         layers = []
@@ -276,7 +276,7 @@ class ResNet(nn.Module):
         x = self.layer0(x)
         x = self.layer1(x)
         x = self.layer2(x)
-        x = self.layer3(x)
+        #x = self.layer3(x)
         #x = self.layer4(x)
 
         x = self.flat(x)
