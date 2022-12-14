@@ -153,7 +153,7 @@ def weights_init(m):
             
 model1 = model1.apply(weights_init)
 
-model1= nn.DataParallel(model1)
+#model1= nn.DataParallel(model1)
 model1.to(device)
 #%% Data preprocessing
 
@@ -212,10 +212,10 @@ y_val      = torch.tensor(y_val).float()
 
 # Combine datasets
 train_set = TensorDataset(X_cts_train, X_dos_train, X_cln_train, y_train)
-train_loader = DataLoader(train_set, batch_size = bs,pin_memory=True,shuffle=True,num_workers=2) 
+train_loader = DataLoader(train_set, batch_size = bs,pin_memory=True,shuffle=True,num_workers=0) 
 
 test_set = TensorDataset(X_cts_test, X_dos_test, X_cln_test, y_test)
-test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True,num_workers=2)
+test_loader = DataLoader(test_set, batch_size = bs,pin_memory=True,shuffle=True,num_workers=0)
 
 val_set = TensorDataset(X_cts_val, X_dos_val, X_cln_val, y_val)
 val_loader = DataLoader(val_set, batch_size = 4,pin_memory=True,shuffle=True)
