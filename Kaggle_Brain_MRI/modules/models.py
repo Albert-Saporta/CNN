@@ -214,21 +214,17 @@ class ResidualBlock(nn.Module):
         
     def forward(self, x):
         residual = x
-        print("memory residual",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
 
         #print("res shape",residual.shape)
         out = self.conv1(x)
         out = self.conv2(out)
-        print("memory out",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
 
         if self.downsample:
             residual = self.downsample(x)
         #print("res and out shape",residual.shape,out.shape)
-        print("memory downsample",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
 
         out += residual
         
-        print("memory out+=",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
 
         #print("final out shape",residual.shape,out.shape)
 
@@ -284,10 +280,16 @@ class ResNet(nn.Module):
     
     def forward(self, x_dos, x_cts, x_cln):
         x = torch.cat((x_dos, x_cts), dim=1)
+        print("memory cat",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
         x = self.conv1(x)
         x = self.maxpool(x)
+        print("memory pool",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
         x = self.layer0(x)
         x = self.layer1(x)
+        print("memory layer 1",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
         x = self.layer2(x)
         #x = self.layer3(x)
         #x = self.layer4(x)
