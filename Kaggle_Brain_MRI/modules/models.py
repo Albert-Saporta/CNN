@@ -206,7 +206,7 @@ class ResidualBlock(nn.Module):
                         nn.BatchNorm3d(out_channels),
                         nn.ReLU())
         self.conv2 = nn.Sequential(
-                        nn.Conv3d(out_channels, out_channels, kernel_size = 3, stride = 1, padding = 1),
+                        nn.Conv3d(out_channels, out_channels, kernel_size = 3, stride = 1, padding = 3),
                         nn.BatchNorm3d(out_channels))
         self.downsample = downsample
         self.relu = nn.ReLU()
@@ -217,8 +217,8 @@ class ResidualBlock(nn.Module):
         print("res shape",residual.shape)
         out = self.conv1(x)
         out = self.conv2(out)
-        #if self.downsample:
-        #    residual = self.downsample(x)
+        if self.downsample:
+            residual = self.downsample(x)
         print("res and out shape",residual.shape,out.shape)
 
         out += residual
