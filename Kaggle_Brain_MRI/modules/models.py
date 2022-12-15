@@ -206,7 +206,7 @@ class ResidualBlock(nn.Module):
                         nn.BatchNorm3d(out_channels),
                         nn.ReLU())
         self.conv2 = nn.Sequential(
-                        nn.Conv3d(out_channels, out_channels, kernel_size = 3, stride = 1, padding = 3),
+                        nn.Conv3d(out_channels, out_channels, kernel_size = 3, stride = 1, padding = 1),
                         nn.BatchNorm3d(out_channels))
         self.downsample = downsample
         self.relu = nn.ReLU()
@@ -214,15 +214,23 @@ class ResidualBlock(nn.Module):
         
     def forward(self, x):
         residual = x
-        print("res shape",residual.shape)
+        print("memory residual",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
+        #print("res shape",residual.shape)
         out = self.conv1(x)
         out = self.conv2(out)
+        print("memory out",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
         if self.downsample:
             residual = self.downsample(x)
-        print("res and out shape",residual.shape,out.shape)
+        #print("res and out shape",residual.shape,out.shape)
+        print("memory downsample",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
 
         out += residual
-        print("final out shape",residual.shape,out.shape)
+        
+        print("memory out+=",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
+        #print("final out shape",residual.shape,out.shape)
 
         out = self.relu(out)
         return out
@@ -262,7 +270,7 @@ class ResNet(nn.Module):
         if stride != 1 or self.inplanes != planes:
             
             downsample = nn.Sequential(
-                nn.Conv3d(self.inplanes, planes, kernel_size=3, stride=stride),#kernel size 1?
+                nn.Conv3d(self.inplanes, planes, kernel_size=1, stride=stride),#kernel size 1?
                 nn.BatchNorm3d(planes),
             )
         layers = []

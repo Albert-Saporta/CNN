@@ -34,7 +34,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
 #%% Hyperparameters
-bs = 2
+bs = 8
 n_epochs =1#000
 learning_rate = 0.0005 #0.01
 loss_fn = nn.BCELoss()
@@ -131,7 +131,7 @@ print(f"{sum(y)}/{len(y)} patients are positive")
 #%% model
 #model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
 model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [1, 1, 1])
-print(model1)
+#0print(model1)
 
 optimizer = Adam(model1.parameters(), lr = learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, \
