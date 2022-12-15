@@ -142,15 +142,15 @@ def weights_init(m):
    if isinstance(m, nn.Conv3d):
        torch.nn.init.normal_(m.weight, 0.0, 0.02)
    if isinstance(m, nn.BatchNorm3d):
-       torch.nn.init.normal_(m.weight, 1.0, 0.02)
+       torch.nn.init.constant_(m.weight, 1.0)
        torch.nn.init.constant_(m.bias, 0)
    if isinstance(m, nn.BatchNorm1d):
-       torch.nn.init.normal_(m.weight, 1.0, 0.02)
+       torch.nn.init.constant_(m.weight, 1.0)
        torch.nn.init.constant_(m.bias, 0)
    if isinstance(m, nn.Linear):
        torch.nn.init.normal_(m.weight, 0.0, 0.02)
        torch.nn.init.constant_(m.bias, 0)
-            
+#https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L100
 model1 = model1.apply(weights_init)
 
 model1= nn.DataParallel(model1,device_ids=[0, 1])
@@ -290,8 +290,7 @@ plt.legend()
 plt.xlabel("Epoch")
 plt.savefig(pth_path_cluster+'Learning_Curves.pdf',format='pdf')
 plt.show()
-#%%% 
-#%% validation. to do save model and use another code
+
 
 CNN3D=model1.eval()
 

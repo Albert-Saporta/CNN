@@ -217,8 +217,8 @@ class ResidualBlock(nn.Module):
         print("res shape",residual.shape)
         out = self.conv1(x)
         out = self.conv2(out)
-        if self.downsample:
-            residual = self.downsample(x)
+        #if self.downsample:
+        #    residual = self.downsample(x)
         print("res and out shape",residual.shape,out.shape)
 
         out += residual
