@@ -167,13 +167,20 @@ class RadiomicsCNN(nn.Module):
         
         # Concatenate dosimetric and clinical features
         x = torch.cat((x_dos, x_cts), dim=1)
-        
+        print("memory cat",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
         x = self.conv1(x)
+        print("memory conv 1",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
         x = self.conv2(x)
+        print("memory 2",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
         x = self.conv3(x)
         x = self.conv4(x)
         x = self.conv5(x)
         x = self.flat(x)
+        print("memory flat",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
         #print("flat shape",x.shape)
         # FC layer to reduce x to the size of the clinical path
         x = F.rrelu(self.fc1_bn( self.fc1(x)))
@@ -229,6 +236,8 @@ class ResidualBlock(nn.Module):
         #print("final out shape",residual.shape,out.shape)
 
         out = self.relu(out)
+        print("memory res out",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
         return out
 
 class ResNet(nn.Module):
@@ -274,7 +283,7 @@ class ResNet(nn.Module):
         self.inplanes = planes
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes))
-
+        
         return nn.Sequential(*layers)
     
     
@@ -287,6 +296,8 @@ class ResNet(nn.Module):
         print("memory pool",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
 
         x = self.layer0(x)
+        print("memory layer 0",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
+
         x = self.layer1(x)
         print("memory layer 1",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
 
