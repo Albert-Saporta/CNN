@@ -37,7 +37,7 @@ from torch.autograd import Variable
 
 
 #%% Path
-pth_name="radiomics3dCNN_1312_resnet" #"radiomics3dCNN_1212_added_norm_recall_batch1d_init"#
+pth_name="radiomics3dCNN_1912_resnet_moe_layers" #"radiomics3dCNN_1212_added_norm_recall_batch1d_init"#
 
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 device = torch.device("cuda")
@@ -138,7 +138,7 @@ print(image.shape)
 pth="C:/Users/alber/Bureau/Development/DeepLearning/training_results/cluster/"+pth_name+"/"+pth_name+".pth"
 print(pth)
 #model = RadiomicsCNN(dim1,dim2,dim3,3)
-model=ResNet(dim1,dim2,dim3,3,ResidualBlock, [2, 2, 2, 2])
+model=ResNet(dim1,dim2,dim3,3,ResidualBlock, [3, 4, 6, 3])
 #model= nn.DataParallel(model)#,device_ids=[0, 1])
 
 
@@ -164,7 +164,6 @@ conv_layers = []
 model_children = list(model.children())
 
 #print(list(model_children[2][0].children())[0][0])
-print(model_children)
 #counter to keep count of the conv layers
 counter = 0
 #append all the conv layers and their respective wights to the list
@@ -206,14 +205,20 @@ names = []
 #https://discuss.pytorch.org/t/downsampling-at-resnet/39038/5 
 # issue with downsample 64 128...
 #conv_layers=conv_layers[0:6]
-conv_layers.pop(7) # [0,1,2,3,4,5,6,8,9,10,11,13,14,15,16,18,19]
-conv_layers.pop(11)
+conv_layers.pop(8) # [0,1,2,3,4,5,6,8,9,10,11,13,14,15,16,18,19]
+conv_layers.pop(14)
+conv_layers.pop(26)
+conv_layers.pop(17)
+conv_layers.pop(8)
 conv_layers.pop(15)
+conv_layers.pop(25)
 print(conv_layers)
+i=0
 for layer in conv_layers[0:]:
     
-    #print(layer)
-    
+    print(i,layer)
+    i+=1
+    print("")
     image = layer(image)
     outputs.append(image)
     names.append(str(layer))
@@ -237,11 +242,11 @@ for fm in processed:
 slice_number=7
 fig = plt.figure(figsize=(30, 50))
 for i in range(len(processed)):
-    a = fig.add_subplot(5, 4, i+1)
+    a = fig.add_subplot(5, 6, i+1)
     imgplot = plt.imshow(processed[i][slice_number,:,:])
     a.axis("off")
     a.set_title(names[i].split('(')[0], fontsize=30)#ajouter num layer
-plt.savefig(str('feature_maps.jpg'), bbox_inches='tight')
+#plt.savefig(str('feature_maps.jpg'), bbox_inches='tight')
 
 #%%% old code for 3dcnn
 

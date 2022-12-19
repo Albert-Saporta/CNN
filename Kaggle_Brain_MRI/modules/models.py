@@ -287,7 +287,6 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
         #print("memory pool",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
         x = self.layer0(x)
-        print("")
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
