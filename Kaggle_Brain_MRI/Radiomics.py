@@ -34,7 +34,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
 #%% Hyperparameters
-bs = 8
+bs = 2#8
 n_epochs =1#000
 learning_rate = 0.0005 #0.01
 loss_fn = nn.BCELoss()
@@ -48,7 +48,7 @@ pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/
 device = torch.device("cuda")
 print("# GPUs",torch.cuda.device_count())
 
-
+"""
 pth_file_name=pth_path_cluster+pth_name
 path=path_cluster
 
@@ -61,7 +61,7 @@ elif os.path.exists(pth_path_cluster)==False:
 
 pth_file_name=pth_path_local+pth_name
 path=path_local
-"""
+
 
 
 
@@ -129,8 +129,8 @@ print(f"{sum(y)}/{len(y)} patients are positive")
 
  
 #%% model
-model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
-#model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [1, 1, 1])
+#model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
+model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [1, 1, 1])
 #0print(model1)
 
 optimizer = Adam(model1.parameters(), lr = learning_rate)
@@ -153,30 +153,25 @@ def weights_init(m):
 #https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L100
 model1 = model1.apply(weights_init)
 
-model1= nn.DataParallel(model1,device_ids=[0, 1])
+model1= nn.DataParallel(model1)#,device_ids=[0, 1])
 model1.to(device)
 #%% Data preprocessing
 
 #%%% Normalization
-
-
 # use scikit learn standard scaler
 # Normalize continuous clinical variables!! use fit on train and transform on test!!
-
-
 var = 1 # index of 'Age'
 mean = X_cln[:,var].mean()
 std  = X_cln[:,var].std()
 #X_cln[:,var] = (X_cln[:,var]-mean)/std
 X_cln=X_cln/X_cln.max()
-print("norm_test cln",X_cln.min(),X_cln.max())
-
-
 X_dos=X_dos/X_dos.max()
-print("norm_test dos",X_dos.min(),X_dos.max())
-
 X_cts=normalize_CT(X_cts)#X_cts/X_cts.max()
+"""
+print("norm_test cln",X_cln.min(),X_cln.max())
+print("norm_test dos",X_dos.min(),X_dos.max())
 print("norm_test CT",X_cts.min(),X_cts.max())
+"""
 #%%% train and test set
 #Split data
 train = [int(x) for x in range(int(0.7*n_patients))]
@@ -190,7 +185,7 @@ X_cts_train, X_cts_test,X_cts_val = X_cts[train,:,:], X_cts[test,:,:,:],X_cts[va
 X_cln_train, X_cln_test, X_cln_val = X_cln[train,:], X_cln[test,:],X_cln[val,:]
 y_train, y_test,y_val = y[train], y[test], y[val]
 
-print("test,val",y_test, y_val)
+#print("test,val",y_test, y_val)
 
 
 # convert data to tensors
