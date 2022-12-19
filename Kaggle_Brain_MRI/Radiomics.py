@@ -130,7 +130,7 @@ print(f"{sum(y)}/{len(y)} patients are positive")
  
 #%% model
 #model1 = RadiomicsCNN(dim1,dim2,dim3,n_cln)
-model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [2, 2, 2])
+model1=ResNet(dim1,dim2,dim3,n_cln,ResidualBlock, [2, 2, 2, 2])
 #0print(model1)
 
 optimizer = Adam(model1.parameters(), lr = learning_rate)
