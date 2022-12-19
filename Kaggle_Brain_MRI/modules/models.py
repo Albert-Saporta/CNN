@@ -238,15 +238,15 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
         self.inplanes = 64
         self.conv1 = nn.Sequential(
-                        nn.Conv3d(2, 64, kernel_size = 7, stride = 2, padding = 3),#•ks 3
+                        nn.Conv3d(2, 64, kernel_size = 3, stride = 1, padding = 1),#•ks 3
                         nn.BatchNorm3d(64),
                         nn.ReLU())
         self.maxpool = nn.MaxPool3d(kernel_size = 3, stride = 2, padding = 1)
         #self.layer0 = self._make_layer(block, 32, layers[0], stride = 1)
         self.layer0 = self._make_layer(block, 64, layers[0], stride = 1)
-        self.layer1 = self._make_layer(block, 128, layers[1], stride = 2)
-        self.layer2 = self._make_layer(block, 256, layers[2], stride = 2)
-        self.layer3 = self._make_layer(block, 512, layers[3], stride = 2)
+        self.layer1 = self._make_layer(block, 128, layers[1], stride = 1)
+        self.layer2 = self._make_layer(block, 256, layers[2], stride = 1)
+        self.layer3 = self._make_layer(block, 512, layers[3], stride = 1)
         self.avgpool = nn.AvgPool3d(7, stride=1)
         #self.flat = nn.Flatten()
         # FC 1: make the size of x equal to the size of the clinical path
