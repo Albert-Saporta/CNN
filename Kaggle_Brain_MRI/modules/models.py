@@ -238,7 +238,7 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
         self.inplanes = 64
         self.conv1 = nn.Sequential(
-                        nn.Conv3d(2, 64, kernel_size = 7, stride = 2, padding = 3),#•ks 3
+                        nn.Conv3d(2, 64, kernel_size = 3, stride = 2, padding = 1),#•ks 3
                         nn.BatchNorm3d(64),
                         nn.ReLU())
         self.maxpool = nn.MaxPool3d(kernel_size = 3, stride = 2, padding = 1)
