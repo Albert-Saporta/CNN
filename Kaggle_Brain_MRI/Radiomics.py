@@ -34,13 +34,13 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
 #%% Hyperparameters
-bs = 8
+bs = 4
 n_epochs =1000
 learning_rate = 0.0005 #0.01
 loss_fn = nn.BCELoss()
 #%% Extract clinical data and outcome
 #%%% Path
-pth_name="radiomics3dCNN_1312_resnet"
+pth_name="radiomics3dCNN_1912_resnet"
 path_cluster='/bigdata/casus/optima/data/Radiomics_McMedHacks/'
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
@@ -153,7 +153,7 @@ def weights_init(m):
 #https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L100
 model1 = model1.apply(weights_init)
 
-model1= nn.DataParallel(model1)#,device_ids=[0, 1])
+#model1= nn.DataParallel(model1)#,device_ids=[0, 1])
 model1.to(device)
 #%% Data preprocessing
 

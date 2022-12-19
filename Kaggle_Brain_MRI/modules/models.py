@@ -247,10 +247,10 @@ class ResNet(nn.Module):
         self.layer1 = self._make_layer(block, 128, layers[1], stride = 2)
         self.layer2 = self._make_layer(block, 256, layers[2], stride = 2)
         self.layer3 = self._make_layer(block, 512, layers[3], stride = 2)
-        self.avgpool = nn.AvgPool3d(7, stride=1)
+        self.avgpool = nn.AvgPool3d(4, stride=1)
         #self.flat = nn.Flatten()
         # FC 1: make the size of x equal to the size of the clinical path
-        self.fc1 = nn.Linear(18432, n_cln)#506880
+        self.fc1 = nn.Linear(3072, n_cln)#506880
         self.fc1_bn = nn.BatchNorm1d(n_cln)
         
         # FC 2: expand the features after concatination
@@ -297,7 +297,7 @@ class ResNet(nn.Module):
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
 
-        x = F.rrelu(self.fc1_bn( self.fc1(x)))
+        x = F.rrelu(self.fc1_bn(self.fc1(x)))
         # Concatinate clinical variables
         x_cln = x_cln.squeeze(1)
         #print(x_cln)

@@ -37,9 +37,10 @@ from torch.autograd import Variable
 
 
 #%% Path
-pth_name="radiomics3dCNN_1212_added_norm_recall_batch1d_init"
+pth_name="radiomics3dCNN_1312_resnet" #"radiomics3dCNN_1212_added_norm_recall_batch1d_init"#
+
 path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
-device = torch.device("cpu")
+device = torch.device("cuda")
 
 path=path_local
 
@@ -134,10 +135,14 @@ image = image_test.unsqueeze(0)
 print(image.shape)
 
 #%% Visu
-pth="C:/Users/alber/Bureau/Development/DeepLearning/training_results/cluster/radiomics3dCNN_1212_added_norm_recall_batch1d_init/radiomics3dCNN_1212_added_norm_recall_batch1d_init.pth"
+pth="C:/Users/alber/Bureau/Development/DeepLearning/training_results/cluster/"+pth_name+"/"+pth_name+".pth"
+print(pth)
+#model = RadiomicsCNN(dim1,dim2,dim3,3)
+model=ResNet(dim1,dim2,dim3,3,ResidualBlock, [2, 2, 2, 2])
+#model= nn.DataParallel(model)#,device_ids=[0, 1])
 
-model = RadiomicsCNN(dim1,dim2,dim3,3)
-state_dict = torch.load(pth, map_location=device)
+
+state_dict = torch.load(pth)#, map_location=device)
 model.load_state_dict(state_dict)
 model.eval()
 #model.to(device)
@@ -157,27 +162,58 @@ model_weights =[]
 conv_layers = []
 # get all the model children as list
 model_children = list(model.children())
-#print(model_children[0][0])
+
+#print(list(model_children[2][0].children())[0][0])
+print(model_children)
 #counter to keep count of the conv layers
 counter = 0
 #append all the conv layers and their respective wights to the list
-for i in range(5):
-    if type(model_children[i][0]) == nn.Conv3d:
+for i in range(len(model_children)):
+    if type(model_children[i]) == nn.Conv3d:
+        #print(model_children[i])
         counter+=1
-        model_weights.append(model_children[i][0].weight)
-        conv_layers.append(model_children[i][0])
-print(f"Total convolution layers: {counter}")
-print("conv_layers")
+        model_weights.append(model_children[i].weight)
+        conv_layers.append(model_children[i])
+    elif type(model_children[i]) == nn.Sequential:
+        if type(model_children[i][0]) == nn.Conv3d:
+            counter+=1
+            model_weights.append(model_children[i][0].weight)
+            conv_layers.append(model_children[i][0])
+        else:
+            for j in range(len(model_children[i])):
+                for child in list(model_children[i][j].children()):
+                    print("bug",child)
+                    try:
+                        for k in range(len(child)):
+                            if type(child[k]) == nn.Conv3d:
+                                #print(child[k])
+        
+                                counter+=1
+                                model_weights.append(child[k].weight)
+                                conv_layers.append(child[k])
+                    except:
+                        TypeError
 
-print(conv_layers[0:])
+print(f"Total convolution layers: {counter}")
+#print("conv_layers")
+
+print(len(conv_layers[0:]))
 
 #%%% generate feature maps
 
 outputs = []
 names = []
-
+#https://discuss.pytorch.org/t/downsampling-at-resnet/39038/5 
+# issue with downsample 64 128...
+#conv_layers=conv_layers[0:6]
+conv_layers.pop(7) # [0,1,2,3,4,5,6,8,9,10,11,13,14,15,16,18,19]
+conv_layers.pop(11)
+conv_layers.pop(15)
+print(conv_layers)
 for layer in conv_layers[0:]:
+    
     #print(layer)
+    
     image = layer(image)
     outputs.append(image)
     names.append(str(layer))
@@ -198,7 +234,7 @@ for fm in processed:
     print(fm.shape)
 
 #%%%
-slice_number=15
+slice_number=7
 fig = plt.figure(figsize=(30, 50))
 for i in range(len(processed)):
     a = fig.add_subplot(5, 4, i+1)
@@ -206,3 +242,17 @@ for i in range(len(processed)):
     a.axis("off")
     a.set_title(names[i].split('(')[0], fontsize=30)#ajouter num layer
 plt.savefig(str('feature_maps.jpg'), bbox_inches='tight')
+
+#%%% old code for 3dcnn
+
+"""
+for i in range(5):
+    if type(model_children[i][0]) == nn.Conv3d:
+        counter+=1
+        model_weights.append(model_children[i][0].weight)
+        conv_layers.append(model_children[i][0])
+print(f"Total convolution layers: {counter}")
+print("conv_layers")
+
+print(conv_layers[0:])
+"""

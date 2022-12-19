@@ -4,14 +4,19 @@ Created on Wed Nov 23 14:35:06 2022
 
 @author: alber
 """
-!pip install SimpleITK
+#!pip install SimpleITK
 import os
 import SimpleITK as sitk
 import dicom as dc
 import numpy as np
+import matplotlib.pyplot as plt 
 
-Folder_Path = "Folder of Dicom File"
-fname = Folder_Path + "\\IndexNumber.txt"
+
+#%%d
+Input_path="C:/Users/alber/Bureau/Development/Data/Images_data/CT/manifest-1599750808610/Pancreas-CT/PANCREAS_0001/11-24-2015-PANCREAS0001-Pancreas-18957/"#"Pancreas-99667/"
+
+Folder_Path = Input_path
+fname = Folder_Path + "Pancreas-99667/"
 with open(fname) as f:
     DICOM_LIST = f.readlines()
 #To remove /n 
@@ -46,4 +51,4 @@ NpArrDc = np.transpose(NpArrDc, (2, 0, 1))
 sitk_img = sitk.GetImageFromArray(NpArrDc, isVector=False)
 sitk_img.SetSpacing(Spacing)
 sitk_img.SetOrigin(Origin)
-sitk.WriteImage(sitk_img, os.path.join(Folder_Path, "sample" + ".mhd") )
+sitk.WriteImage(sitk_img, os.path.join("C:/Users/alber/Bureau/Development/Data", "sample" + ".mhd") )
