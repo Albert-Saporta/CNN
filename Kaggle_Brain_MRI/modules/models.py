@@ -250,7 +250,7 @@ class ResNet(nn.Module):
         self.avgpool = nn.AvgPool3d(7, stride=1)
         #self.flat = nn.Flatten()
         # FC 1: make the size of x equal to the size of the clinical path
-        self.fc1 = nn.Linear(512, n_cln)#506880
+        self.fc1 = nn.Linear(18432, n_cln)#506880
         self.fc1_bn = nn.BatchNorm1d(n_cln)
         
         # FC 2: expand the features after concatination
@@ -286,14 +286,10 @@ class ResNet(nn.Module):
         x = self.conv1(x)
         x = self.maxpool(x)
         #print("memory pool",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
-
         x = self.layer0(x)
-        #print("memory layer 0",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
         print("")
         x = self.layer1(x)
-        print("memory layer 1",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
         x = self.layer2(x)
-        print("memory layer 2",torch.cuda.memory_allocated()/torch.cuda.max_memory_allocated())
         x = self.layer3(x)
         #x = self.layer4(x)
 
@@ -309,7 +305,6 @@ class ResNet(nn.Module):
         # Last FCs
         x_final = F.rrelu(self.fc2_bn(self.fc2(x_final)))
         x_final = torch.sigmoid(self.fc3_bn(self.fc3(x_final)))
-        #x = self.avgpool(x)
   
 
         return x_final.squeeze()    

@@ -34,8 +34,8 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
 #%% Hyperparameters
-bs = 4
-n_epochs =1#000
+bs = 8
+n_epochs =1000
 learning_rate = 0.0005 #0.01
 loss_fn = nn.BCELoss()
 #%% Extract clinical data and outcome
