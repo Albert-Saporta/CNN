@@ -52,8 +52,9 @@ def radiomics(path, pth_name):
     path_local='C:/Users/alber/Bureau/Development/Data/Images_data/Radiomics_McMedHacks/'
     pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
     pth_path_local="C:/Users/alber/Bureau/Development/DeepLearning/training_results/"
-    device = torch.device("cuda")
     """
+    device = torch.device("cuda")
+
     print("# GPUs",torch.cuda.device_count())
 
     #pth_name=name
@@ -73,7 +74,7 @@ def radiomics(path, pth_name):
     """
 #%% Hyperparameters
     bs = 4
-    n_epochs =1#000
+    n_epochs =1000
     learning_rate = 0.0005 #0.01
     loss_fn = nn.BCELoss()
 #%% Extract clinical data and outcome
