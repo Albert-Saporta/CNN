@@ -82,7 +82,7 @@ def radiomics(path, pth_name):
     
     n_patients = 56
     
-    dim1 = 185 - 70
+    dim1 = 186 - 70
     dim2 = 170 - 30
     dim3 = 230 - 40
     
@@ -108,13 +108,13 @@ def radiomics(path, pth_name):
         # CT scanes
         image = sitk.ReadImage(path+f'warpedCT/warped_{p}.mha')
         image = sitk.GetArrayFromImage(image)
-        image = image[70:185, 30:170, 40:230]
+        image = image[70:186, 30:170, 40:230]
         X_cts[ip, :, :, :] = image
         
         # Dose maps
         image = sitk.ReadImage(path+f'warpedDose/HN-CHUM-{p}-dose-refct.mha') 
         image = sitk.GetArrayFromImage(image)
-        image = image[70:185, 30:170, 40:230]
+        image = image[70:186, 30:170, 40:230]
         X_dos[ip, :, :, :] = image
         
         # Clinical

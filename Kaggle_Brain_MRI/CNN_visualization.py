@@ -50,7 +50,7 @@ path=path_local
 
 n_patients = 3
 
-dim1 = 185 - 70
+dim1 = 186 - 70
 dim2 = 170 - 30
 dim3 = 230 - 40
 df_cln = pd.read_excel(path+'Clinical_data_modified_2.xlsx', sheet_name = 'CHUM')
@@ -77,13 +77,13 @@ for ip, p in enumerate(p_id):
     # CT scanes
     image = sitk.ReadImage(path+f'warpedCT/warped_{p}.mha')
     image = sitk.GetArrayFromImage(image)
-    image = image[70:185, 30:170, 40:230]
+    image = image[70:186, 30:170, 40:230]
     X_cts[ip, :, :, :] = image
     
     # Dose maps
     image = sitk.ReadImage(path+f'warpedDose/HN-CHUM-{p}-dose-refct.mha') 
     image = sitk.GetArrayFromImage(image)
-    image = image[70:185, 30:170, 40:230]
+    image = image[70:186, 30:170, 40:230]
     X_dos[ip, :, :, :] = image
     
     # Clinical

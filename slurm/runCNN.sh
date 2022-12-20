@@ -21,5 +21,5 @@ module load python/3.9.6
 
 
 # Execute your code
-python /bigdata/casus/optima/scripts/CNN/Kaggle_Brain_MRI/Radiomics.py -p /bigdata/casus/optima/data/Radiomics_McMedHacks/ -n radiomics3dCNN_2012_resnet_more_layers
+python /bigdata/casus/optima/scripts/CNN/Kaggle_Brain_MRI/Radiomics.py -p /bigdata/casus/optima/data/Radiomics_McMedHacks/ -n radiomics3dCNN_2012_resnet_size116
 
