@@ -326,7 +326,7 @@ def radiomics(path, pth_name):
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
     plt.savefig(pth_path_cluster+'ROC_Curves.pdf',format='pdf')
-    plt.show()
+    #plt.show()
     #%%% Confusion matrix 
     thr = .2
     CM = confusion_matrix(y_true.cpu().detach().numpy().astype(int), to_labels(y_pred.cpu().detach().numpy(), thr).astype(int))
@@ -334,7 +334,7 @@ def radiomics(path, pth_name):
     plt.figure()
     sns.heatmap(df_cm, annot=True, cmap = 'Blues')
     plt.savefig(pth_path_cluster+'Confusion_Matrix.pdf',format='pdf')
-    plt.show()
+    #plt.show()
     #%%% Precision recall curve
     prec, recall, thr2 = precision_recall_curve(y_true.cpu().detach().numpy().astype(int), to_labels(y_pred.cpu().detach().numpy(), thr).astype(int))
     plt.figure()
@@ -345,7 +345,10 @@ def radiomics(path, pth_name):
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.savefig(pth_path_cluster+'PR_curve.pdf',format='pdf')
-    plt.show()
+    #plt.show()
+    
+    print("")
+    print("pth_name",pth_name)
     
 if __name__ == '__main__':
     radiomics_click()
