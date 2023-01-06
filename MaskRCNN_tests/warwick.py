@@ -55,6 +55,7 @@ class WarwickCellDataset(object):
         self.imgs = list(natsorted(os.listdir(os.path.join(root, "image"))))
         print('imgs file names:', self.imgs)
         self.masks = list(natsorted(os.listdir(os.path.join(root, "mask"))))
+        #self.masks = list(natsorted(os.listdir(root+"/mask")))
         print('masks file names:', self.masks)
 
     def __getitem__(self, idx):
@@ -67,7 +68,7 @@ class WarwickCellDataset(object):
         img_path = os.path.join(self.root, "image", self.imgs[idx])
         # print('img_path', self.imgs[idx])
         mask_path = os.path.join(self.root, "mask", self.masks[idx])
-
+        print(mask_path,idx)
         img = Image.open(img_path).convert("RGB")
         # note that we haven't converted the mask to RGB,
         # because each color corresponds to a different instance
@@ -135,13 +136,6 @@ class WarwickCellDataset(object):
     def __len__(self):
         return len(self.imgs)
     
-#%%
-dataset_train = WarwickCellDataset(root_train, transforms=torchvision.transforms.ToTensor()) # get_transform(train=True)
-data_loader_train = DataLoader(dataset_train, batch_size=2, shuffle=True,collate_fn=lambda x:list(zip(*x)))
-print(len(data_loader_train))
-#%% visu
-images,labels=next(iter(data_loader_train))
-
 def view(images,labels,n=2,std=1,mean=0):
     figure = plt.figure(figsize=(15,10))
     images=list(images)
@@ -158,7 +152,12 @@ def view(images,labels,n=2,std=1,mean=0):
         l[:,3]=l[:,3]-l[:,1]
         for j in range(len(l)):
             ax.add_patch(patches.Rectangle((l[j][0],l[j][1]),l[j][2],l[j][3],linewidth=1.5,edgecolor='r',facecolor='none')) 
-
+#%%
+dataset_train = WarwickCellDataset(root_train, transforms=torchvision.transforms.ToTensor()) # get_transform(train=True)
+data_loader_train = DataLoader(dataset_train, batch_size=8, shuffle=True,collate_fn=lambda x:list(zip(*x)))
+print(len(data_loader_train))
+#%% visu
+#images,labels=next(iter(data_loader_train))
 #view(images=images,labels=labels,n=2,std=1,mean=0)
 #%%
 num_classes = 2
@@ -172,7 +171,7 @@ model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
 # now get the number of input features for the mask classifier
 in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-hidden_layer = 20#256
+hidden_layer = 2#256
 # and replace the mask predictor with a new one
 model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
                                                     hidden_layer,
