@@ -228,7 +228,7 @@ in_features = model.roi_heads.box_predictor.cls_score.in_features
 model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 # now get the number of input features for the mask classifier
 in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-hidden_layer = 2#256
+hidden_layer = 256
 # and replace the mask predictor with a new one
 model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
                                                     hidden_layer,
@@ -239,12 +239,14 @@ optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0005)
 
 #%% train
 loss_list = []
-n_epochs = 2#10
+n_epochs = 10
 model.train()
 for epoch in range(n_epochs):
     loss_epoch = []
     iteration=1
-    for images,targets in tqdm(data_loader_train):
+    train_loop=tqdm(data_loader_train)
+    for images,targets in train_loop:
+        train_loop.set_description(f'Epoch {epoch+1}/{n_epochs}')
 
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
