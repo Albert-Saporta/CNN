@@ -37,6 +37,9 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 local_train = "C:/Users/alber/Bureau/Development/Data/Images_data/Warwick_QU/train"
 cluster_train="/bigdata/casus/optima/Warwick_QU/train"
 
+pth_name="maskrcnn"
+pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
+
 root_train=cluster_train
 device = torch.device('cuda')
 #%% function
@@ -156,7 +159,7 @@ def view(images,labels,n=2,std=1,mean=0):
         for j in range(len(l)):
             ax.add_patch(patches.Rectangle((l[j][0],l[j][1]),l[j][2],l[j][3],linewidth=1.5,edgecolor='r',facecolor='none')) 
 
-view(images=images,labels=labels,n=2,std=1,mean=0)
+#view(images=images,labels=labels,n=2,std=1,mean=0)
 #%%
 num_classes = 2
 # load an instance segmentation model pre-trained pre-trained on COCO
@@ -185,7 +188,7 @@ optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0005)
 # Perform training loop for n epochs
 # Perform training loop for n epochs
 loss_list = []
-n_epochs = 10
+n_epochs = 1#10
 model.train()
 for epoch in range(n_epochs):
     loss_epoch = []
@@ -217,5 +220,5 @@ for epoch in range(n_epochs):
     print("Average loss for epoch = {:.4f} ".format(loss_epoch_mean))
 
 #model_nr = latest_model() + 1
-save_path = "C:/Users/alber/Bureau/Development/"
+save_path = pth_path_cluster+"maskrcnn.pth"#"C:/Users/alber/Bureau/Development/"
 torch.save(model.state_dict(), save_path)
