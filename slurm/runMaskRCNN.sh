@@ -10,6 +10,9 @@
 #SBATCH --ntasks=2     # number of tasks (i.e. parallel processes) to be started
 #SBATCH --output=maskrcnn%j.out      # nom du fichier de sortie
 #SBATCH --error=maskrcnn%j.out       # nom du fichier d'erreur (ici commun avec la sortie)
+#SBATCH --mail-user=$asaporta@eisbm.org
+#SBATCH --mail-type=END
+  
 
 module purge
 

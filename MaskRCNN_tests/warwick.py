@@ -221,7 +221,7 @@ data_loader_train = DataLoader(dataset_train, batch_size=8, shuffle=True,collate
 #%%
 num_classes = 2
 # load an instance segmentation model pre-trained pre-trained on COCO
-model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights="MaskRCNN_ResNet50_FPN_Weights.COCO_V1")
+model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(weights="MaskRCNN_ResNet50_FPN_V2_Weights.COCO_V1")
 # get number of input features for the classifier
 in_features = model.roi_heads.box_predictor.cls_score.in_features
 # replace the pre-trained head with a new one
@@ -239,7 +239,7 @@ optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0005)
 
 #%% train
 loss_list = []
-n_epochs = 10
+n_epochs = 100
 model.train()
 for epoch in range(n_epochs):
     loss_epoch = []
