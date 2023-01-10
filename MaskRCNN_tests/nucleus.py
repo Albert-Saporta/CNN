@@ -5,65 +5,7 @@ Created on Mon Jan  9 16:19:51 2023
 @author: alber
 """
 #https://www.kaggle.com/code/tjac718/semantic-segmentation-of-nuclei-pytorch
-import torch.optim as optim
-from torch.autograd import Variable
-from time import time
-from natsort import natsorted
-import os
-#os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
-import sys
-import torch
-from torch.utils.data import DataLoader
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision
-from torchvision import models
-import torchvision.transforms as T
-from scipy.ndimage import label,binary_closing,find_objects
-from torchsummary import summary
-import skimage.io
 
-import torch.optim as optim
-from torch.autograd import Variable
-from time import time
-from natsort import natsorted
-#os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
-
-from PIL import Image
-import numpy as np
-import matplotlib.pyplot as plt
-#%matplotlib inline 
-import matplotlib.patches as mpatches
-from matplotlib import patches
-from tqdm import tqdm
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-import numpy as np
-import matplotlib.pyplot as plt
-#%matplotlib inline 
-import matplotlib.patches as mpatches
-from matplotlib import patches
-from tqdm import tqdm
-
-import random
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import zipfile
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import torchvision.transforms as transforms
-import torchvision.transforms.functional as TF
-from scipy import ndimage
-from skimage.io import imread, imshow
-from skimage.transform import resize
-#from skimage.morphology import label
-
-from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, Dataset
-#!pip install numpy 
-#https://bjornkhansen95.medium.com/mask-r-cnn-for-segmentation-using-pytorch-8bbfa8511883
-#https://colab.research.google.com/drive/11FN5yQh1X7x-0olAOx7EJbwEey5jamKl?usp=sharing
 import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
@@ -90,15 +32,14 @@ from matplotlib import patches
 from tqdm import tqdm
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+
 
 #%% param
 n_epochs = 2#00
-hidden_layer = 10#256
+hidden_layer = 256
 
 device = torch.device('cuda')
 image_size=1024#imgage_size
-
-
 
 #%%
 local_train = "C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/train"
@@ -135,7 +76,6 @@ class NucleusCellDataset(object):
         #idx = np.random.randint(35, size=1)[0]
         # print(idx)
         # load images ad masks
-        # print('idx:', idx)
         img_path = os.path.join(self.root, "image", self.imgs[idx])
         # print('img_path', img_path)
         mask_path = os.path.join(self.root, "mask", self.masks[idx])
@@ -145,18 +85,13 @@ class NucleusCellDataset(object):
         # with 0 being background
         mask = Image.open(mask_path).convert('L')
         #print("type",type(mask),mask)
-
         mask = np.array(mask)
         # convert the PIL Image into a numpy array
-
         # instances are encoded as different colors
         obj_ids = np.unique(mask)
-    
         #print("shapeeee",mask)
-
         # first id is the background, so remove it
         obj_ids = obj_ids[1:]
-     
         # split the color-encoded mask into a set
         # of binary masks
         masks = mask == obj_ids[:, None, None]
@@ -175,7 +110,14 @@ class NucleusCellDataset(object):
           ymin = np.min(pos[0])
           ymax = np.max(pos[0])
           # Check if area is larger than a threshold
-      
+          A = abs((xmax-xmin) * (ymax-ymin)) 
+          # print(A)
+          if A < 5:
+            print('Nr before deletion:', num_objs)
+            #obj_ids=np.delete(obj_ids, [i])
+            # print('Area smaller than 5! Box coordinates:', [xmin, ymin, xmax, ymax])
+            #print('Nr after deletion:', len(obj_ids))
+            continue
 
           boxes.append([xmin, ymin, xmax, ymax])
           #print("boxes",boxes)
