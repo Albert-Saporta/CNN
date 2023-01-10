@@ -70,20 +70,22 @@ class WarwickCellDataset(object):
         # load images ad masks
         # print('idx:', idx)
         img_path = os.path.join(self.root, "image", self.imgs[idx])
-       # print('img_path', img_path)
+        # print('img_path', img_path)
         mask_path = os.path.join(self.root, "mask", self.masks[idx])
         img = Image.open(img_path).convert("RGB")
         # note that we haven't converted the mask to RGB,
         # because each color corresponds to a different instance
         # with 0 being background
         mask = Image.open(mask_path)
-
+        print("type",type(mask),mask)
         # convert the PIL Image into a numpy array
         mask = np.array(mask)
-        print("shapeeee",mask.shape)
+        print("shapeeee",mask)
 
         # instances are encoded as different colors
         obj_ids = np.unique(mask)
+        #print("shapeeee",obj_ids)
+
         # first id is the background, so remove it
         obj_ids = obj_ids[1:]
         plt.imshow(mask)
@@ -98,8 +100,8 @@ class WarwickCellDataset(object):
         boxes = []
         for i in range(num_objs):
           pos = np.where(masks[i])
-          print(num_objs)
-          print("pos",pos[1].shape)
+          #print(num_objs)
+          #print("pos",pos[1].shape)
 
           xmin = np.min(pos[1])
           xmax = np.max(pos[1])

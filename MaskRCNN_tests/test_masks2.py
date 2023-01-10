@@ -16,8 +16,8 @@ from tqdm import tqdm
 from skimage.io import imread, imshow, imread_collection, concatenate_images
 from skimage.transform import resize
 from scipy.ndimage import label
-TRAIN_PATH="C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/stage1_train/"
-outpath="C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/mask/"
+TRAIN_PATH="C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/stage1_test/"
+outpath="C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/test/mask/"
 
 import cv2
 seed = 42
@@ -28,11 +28,10 @@ np.random.seed = seed
 train_ids = next(os.walk(TRAIN_PATH))[1]
 
 # Get and resize train images and masks
-IMG_WIDTH = 128
-IMG_HEIGHT = 128
+
 IMG_CHANNELS = 3
 print('Getting and resizing train images and masks ... ')
-sys.stdout.flush()
+#sys.stdout.flush()
 for n, id_ in tqdm(enumerate(train_ids), total=len(train_ids)):
     #print(id_)
     path = TRAIN_PATH + id_

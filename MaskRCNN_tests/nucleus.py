@@ -76,59 +76,160 @@ cluster_test="/bigdata/casus/optima/data/cell_nucleus/stage1_test/"
 pth_name="maskrcnn_nucleus"
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jan  6 10:36:52 2023
 
-TRAIN_PATH=local_train
+@author: alber
+"""
+#!pip install numpy 
+#https://bjornkhansen95.medium.com/mask-r-cnn-for-segmentation-using-pytorch-8bbfa8511883
+#https://colab.research.google.com/drive/11FN5yQh1X7x-0olAOx7EJbwEey5jamKl?usp=sharing
+import torch
+from torch.utils.data import DataLoader
+import torch.nn as nn
+import torch.nn.functional as F
+import torchvision
+from torchvision import models
+import torchvision.transforms as T
 
-train_files = next(os.walk(TRAIN_PATH))[1]
-print(train_files)
+from torchsummary import summary
 
-#X_train = np.zeros((len(train_files), image_size, image_size, 3), dtype = np.uint8)
-#Y_train = np.zeros((len(train_files), image_size, image_size, 3), dtype = np.int32)
+import torch.optim as optim
+from torch.autograd import Variable
+from time import time
+from natsort import natsorted
+import os
+#os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
+from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
+#%matplotlib inline 
+import matplotlib.patches as mpatches
+from matplotlib import patches
+from tqdm import tqdm
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+#%%
+local_train = "C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/train"
+cluster_train="/bigdata/casus/optima/data/cell_nucleus/train"
+local_test = "C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/test"
+cluster_test="/bigdata/casus/optima/data/cell_nucleus/test"
 
+pth_name="maskrcnn_nucleus"
+pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 
-print('Getting training data...')
-
-def load_image_mask():
-    for n, id_ in tqdm(enumerate(train_files), total = len(train_files)):
-        img_path = TRAIN_PATH + id_ + '/images/' + id_ + '.png'
-        img = imread(img_path)#[:,:,:3]
-        #img = resize(img, (image_size, image_size), mode='constant', preserve_range=True)
-        print(img.shape)
-
-        #X_train[n] = img
+root_train=cluster_train
+root_test=cluster_test
+device = torch.device('cuda')
+#%% function
+class NucleusCellDataset(object):
+    def __init__(self, root, transforms=None): # transforms
+        self.root = root
+        # self.transforms = transforms
+        self.transforms=[]
+        if transforms!=None:
+          self.transforms.append(transforms)
+        # load all image files, sorting them to
+        # ensure that they are aligned
+        self.imgs = list(natsorted(os.listdir(os.path.join(root, "image"))))
+        print('imgs file names:', self.imgs)
         
-        masks_path = TRAIN_PATH + id_ + '/masks/'
-        mask = np.zeros((image_size, image_size, 3))
-        mask_images = next(os.walk(masks_path))[2]
-        mask_ = []
-        for mask_id in mask_images:
-            mask_path = masks_path + mask_id
-            mask_test = skimage.io.imread(mask_path).astype(np.bool_)
-            #print(mask_test.shape)
-            mask_.append(mask_test)
-            """
-            obj_ids = np.unique(mask_)
-            #m = mask_[:, :, np.where(255)[0]]
-            m = np.sum(mask_ * np.arange(1, mask_.shape[-1] + 1), -1)
-     
-            mask_ = np.expand_dims(resize(mask_, (image_size, image_size), mode='constant', preserve_range=True), axis=-1)
-            mask = np.maximum(mask, mask_)
-            """
-        mask_ = np.stack(mask_, axis=-1)
-        print(mask.shape)
-        _idx = np.sum(mask_, axis=(0, 1)) > 0
-        masktt = mask_[:, :, _idx]
-        #print("test3",img.shape)
-    
-        Labeled_mask,ref_num_features = ndimage.label(masktt)
-        #print("test4",Labeled_mask.shape)
-        return img,Labeled_mask
-X_train,Y_train=load_image_mask()     
-X_train=X_train.reshape(X_train.shape[2],X_train.shape[0],X_train.shape[1])
-Y_train=Y_train.reshape(Y_train.shape[2],Y_train.shape[0],Y_train.shape[1])
+        self.masks = list(natsorted(os.listdir(os.path.join(root, "mask"))))
+        #self.masks = list(natsorted(os.listdir(root+"/mask")))
+        print('masks file names:', self.masks)
 
-#%% Functions
+    def __getitem__(self, idx):
+        # idx sometimes goes over the nr of training images, add logic to keep it lower
+        if idx >= 64:
+            idx = np.random.randint(64, size=1)[0]
+        # print(idx)
+        # load images ad masks
+        # print('idx:', idx)
+        img_path = os.path.join(self.root, "image", self.imgs[idx])
+        # print('img_path', img_path)
+        mask_path = os.path.join(self.root, "mask", self.masks[idx])
+        img = Image.open(img_path).convert("RGB")
+        # note that we haven't converted the mask to RGB,
+        # because each color corresponds to a different instance
+        # with 0 being background
+        mask = Image.open(mask_path).convert('L')
+        print("type",type(mask),mask)
+
+        mask = np.array(mask)
+        # convert the PIL Image into a numpy array
+
+        # instances are encoded as different colors
+        obj_ids = np.unique(mask)
+        plt.imshow(mask)
+        plt.show()
+        print("shapeeee",obj_ids)
+
+        # first id is the background, so remove it
+        obj_ids = obj_ids[1:]
+     
+        # split the color-encoded mask into a set
+        # of binary masks
+        masks = mask == obj_ids[:, None, None]
+        # get bounding box coordinates for each mask
+        num_objs = len(obj_ids)
+
+        # print(num_objs)
+        boxes = []
+        for i in range(num_objs):
+          pos = np.where(masks[i])
+          print(num_objs)
+          print("pos",pos[1].shape)
+
+          xmin = np.min(pos[1])
+          xmax = np.max(pos[1])
+          ymin = np.min(pos[0])
+          ymax = np.max(pos[0])
+          # Check if area is larger than a threshold
+          A = abs((xmax-xmin) * (ymax-ymin)) 
+          # print(A)
+          if A < 5:
+            print('Nr before deletion:', num_objs)
+            obj_ids=np.delete(obj_ids, [i])
+            # print('Area smaller than 5! Box coordinates:', [xmin, ymin, xmax, ymax])
+            print('Nr after deletion:', len(obj_ids))
+            continue
+            # xmax=xmax+5 
+            # ymax=ymax+5
+
+          boxes.append([xmin, ymin, xmax, ymax])
+          #print("boxes",boxes)
+
+        # print('nr boxes is equal to nr ids:', len(boxes)==len(obj_ids))
+        num_objs = len(obj_ids)
+        # convert everything into a torch.Tensor
+        boxes = torch.as_tensor(boxes, dtype=torch.float32)
+        # there is only one class
+        labels = torch.ones((num_objs,), dtype=torch.int64)
+        masks = torch.as_tensor(masks, dtype=torch.uint8)
+
+        image_id = torch.tensor([idx])
+        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
+        # suppose all instances are not crowd
+        iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
+
+        for i in self.transforms:
+          img = i(img)
+        #print(img.shape,masks.shape)
+        target = {}
+        print(masks.shape,img.shape)
+
+        target["boxes"] = boxes
+        target["labels"] = labels
+        target["masks"] = masks
+        #target["labels"] = labels # Not sure if this is needed
+        #print("labels",target["labels"].shape)
+
+        return img.double(), target
+
+    def __len__(self):
+        return len(self.imgs)
     
 def view(images,labels,n=2,std=1,mean=0):
     figure = plt.figure(figsize=(15,10))
@@ -255,138 +356,14 @@ def draw_segmentation_map(image, masks, boxes, labels):
                     thickness=2, lineType=cv2.LINE_AA)
     
     return image
-
-
-class Nuc_Seg():
-    def __init__(self, images_np, masks_np):
-        self.images_np = images_np
-        self.masks_np = masks_np
-    """
-    def transform(self, image_np, mask_np):
-        ToPILImage = transforms.ToPILImage()
-        image = ToPILImage(image_np)
-        mask = ToPILImage(mask_np.astype(np.int32))
-        
-        image = TF.pad(image, padding = 20, padding_mode = 'reflect')
-        mask = TF.pad(mask, padding = 20, padding_mode = 'reflect')
-        
-        angle = random.uniform(-10, 10)
-        width, height = image.size
-        max_dx = 0.1 * width
-        max_dy = 0.1 * height
-        translations = (np.round(random.uniform(-max_dx, max_dx)), np.round(random.uniform(-max_dy, max_dy)))
-        scale = random.uniform(0.8, 1.2)
-        shear = random.uniform(-0.5, 0.5)
-        image = TF.affine(image, angle = angle, translate = translations, scale = scale, shear = shear)
-        mask = TF.affine(mask, angle = angle, translate = translations, scale = scale, shear = shear)
-        
-        image = TF.center_crop(image, (128, 128))
-        mask = TF.center_crop(mask, (128, 128))
-        
-        image = TF.to_tensor(image)
-        mask = TF.to_tensor(mask)
-        #return image, mask
-    """
-        
-    def __len__(self):
-        return len(self.images_np)
-    
-    def __getitem__(self,idx):
-        #print("idx",idx)
-        image_np = self.images_np#[idx]
-        mask_np = self.masks_np#[idx]
-        #plt.imshow(mask_np)
-        #plt.show()
-        #print("mask_np",mask_np)
-        obj_ids = np.unique(mask_np)
-        obj_ids = obj_ids[1:]
-        num_objs = len(obj_ids)
-        print("num_objs",num_objs)
-        masks = mask_np#== obj_ids[:, None, None]
-        #print("num_objs",masks.shape)
-
-        boxes = []
-        for i in range(num_objs):
-            pos = np.where(masks[i])
-            print("pos",pos[1].shape)
-            xmin = np.min(pos[1])
-            xmax = np.max(pos[1])
-            ymin = np.min(pos[0])
-            ymax = np.max(pos[0])
-            # Check if area is larger than a threshold
-            A = abs((xmax-xmin) * (ymax-ymin)) 
-            # print(A)
-            if A < 5:
-                print('Nr before deletion:', num_objs)
-                obj_ids=np.delete(obj_ids, [i])
-                # print('Area smaller than 5! Box coordinates:', [xmin, ymin, xmax, ymax])
-                print('Nr after deletion:', len(obj_ids))
-                continue
-                # xmax=xmax+5 
-                # ymax=ymax+5
-          
-            boxes.append([xmin, ymin, xmax, ymax])
-
-
-        #image, mask = self.transform(image_np, mask_np)
-        image= image_np
-        masks = torch.as_tensor(masks, dtype=torch.uint8)
-        image = torch.as_tensor(image, dtype=torch.float64)
-        #print(masks.shape,image.shape)
-        boxes = torch.as_tensor(boxes, dtype=torch.float32)
-        # there is only one class
-        labels = torch.ones((num_objs,), dtype=torch.int64)
-        target = {}
-        target["boxes"] = boxes
-        target["labels"] = labels
-        target["masks"] = masks
-        return image, target    
-
-
-
-
-
-
-
-
-
-def iou(pred, target, n_classes = 2):
-    
-    iou = []
-    pred = pred.view(-1)
-    target = target.view(-1)
-
-    # Ignore IoU for background class ("0")
-    for cls in range(1, n_classes):  # This goes from 1:n_classes-1 -> class "0" is ignored
-      pred_inds = pred == cls
-      target_inds = target == cls
-      intersection = (pred_inds[target_inds]).long().sum().data.cpu().item()  # Cast to long to prevent overflows
-      union = pred_inds.long().sum().data.cpu().item() + target_inds.long().sum().data.cpu().item() - intersection
-    
-      if union == 0:
-        iou.append(float('nan'))  # If there is no ground truth, do not include in evaluation
-      else:
-        iou.append(float(intersection) / float(max(union, 1)))
-     
-    return sum(iou)
-
-#%% model and dataloader
-
-
-
-dataset_train = Nuc_Seg(X_train, Y_train)
-#train_loader = DataLoader(train_dataset, batch_size = 16, shuffle = True)
-"""
-fig, axis = plt.subplots(2, 2)
-axis[0][0].imshow(X_train[0].astype(np.uint8))
-axis[0][1].imshow(np.squeeze(Y_train[0]).astype(np.uint8))
-axis[1][0].imshow(X_val[0].astype(np.uint8))
-axis[1][1].imshow(np.squeeze(Y_val[0]).astype(np.uint8))
-"""
-
+#%%
+dataset_train = NucleusCellDataset(root_train, transforms=torchvision.transforms.ToTensor()) # get_transform(train=True)
+#print(dataset_train[3][1])
 data_loader_train = DataLoader(dataset_train, batch_size=4, shuffle=True,collate_fn=lambda x:list(zip(*x)))
-
-
+#%% visu
+#images,labels=next(iter(data_loader_train))
+#view(images=images,labels=labels,n=2,std=1,mean=0)
+#%%
 num_classes = 2
 # load an instance segmentation model pre-trained pre-trained on COCO
 model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(weights="MaskRCNN_ResNet50_FPN_V2_Weights.COCO_V1")
@@ -405,9 +382,9 @@ model=model.to(device)
 params = [p for p in model.parameters() if p.requires_grad]
 optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0005)
 
+#%% train
 loss_list = []
-
-#%% Training
+n_epochs = 2#100
 model.train()
 for epoch in range(n_epochs):
     loss_epoch = []
@@ -420,7 +397,7 @@ for epoch in range(n_epochs):
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        #print(targets)
+        print(targets)
         optimizer.zero_grad()
         model=model.double()
         loss_dict = model(images, targets)
@@ -444,8 +421,13 @@ for epoch in range(n_epochs):
     loss_list.append(loss_epoch_mean) 
     # loss_list.append(loss_epoch_mean)    
     print("Average loss for epoch = {:.4f} ".format(loss_epoch_mean))
-    
-#%% Evaluation
+
+#model_nr = latest_model() + 1
+save_path = pth_path_cluster+"maskrcnn.pth"#"C:/Users/alber/Bureau/Development/"
+torch.save(model.state_dict(), save_path)
+
+#%% evaluation
+
 # Plot training loss
 plt.figure()
 plt.plot(list(range(n_epochs)), loss_list, label='traning loss')
@@ -454,7 +436,7 @@ plt.xlabel("Epoch")
 plt.ylabel("Loss")
 plt.savefig(pth_path_cluster+'figure/Learning_Curves.pdf',format='pdf')
 
-dataset_test = WarwickCellDataset(root_test, transforms=torchvision.transforms.ToTensor()) # get_transform(train=True)
+dataset_test = NucleusCellDataset(root_test, transforms=torchvision.transforms.ToTensor()) # get_transform(train=True)
 data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=2, shuffle=False,collate_fn=lambda x:list(zip(*x)))
 
 images, targets=next(iter(data_loader_test))
