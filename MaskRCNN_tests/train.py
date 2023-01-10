@@ -9,6 +9,7 @@ import torchvision.models.segmentation
 import torch
 import os
 import tqdm
+import matplotlib.pyplot as plt
 
 batchSize=2
 imageSize=[600,600]
@@ -31,6 +32,7 @@ def loadData():
         for mskName in os.listdir(maskDir):
             vesMask = (cv2.imread(maskDir+'/'+mskName, 0) > 0).astype(np.uint8)  # Read vesse instance mask
             vesMask=cv2.resize(vesMask,imageSize,cv2.INTER_NEAREST)
+            
             masks.append(vesMask)# get bounding box coordinates for each mask
         num_objs = len(masks)
         if num_objs==0: return loadData() # if image have no objects just load another image
@@ -44,10 +46,13 @@ def loadData():
         data["boxes"] =  boxes
         data["labels"] =  torch.ones((num_objs,), dtype=torch.int64)   # there is only one class
         data["masks"] = masks
+     
         batch_Imgs.append(img)
         batch_Data.append(data)  # load images and masks
     batch_Imgs = torch.stack([torch.as_tensor(d) for d in batch_Imgs], 0)
     batch_Imgs = batch_Imgs.swapaxes(1, 3).swapaxes(2, 3)
+    print("tessssttsss",batch_Data[0])
+
     return batch_Imgs, batch_Data
 
 model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)  # load an instance segmentation model pre-trained pre-trained on COCO
