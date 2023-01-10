@@ -107,7 +107,7 @@ cluster_test="/bigdata/casus/optima/data/cell_nucleus/test"
 pth_name="maskrcnn_nucleus"
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 
-root_train=local_train
+root_train=cluster_train
 root_test=cluster_test
 device = torch.device('cuda')
 #%% function
