@@ -256,7 +256,7 @@ def draw_segmentation_map(image, masks, boxes, labels):
     return image
 
 
-class Nuc_Seg(Dataset):
+class Nuc_Seg():
     def __init__(self, images_np, masks_np):
         self.images_np = images_np
         self.masks_np = masks_np
@@ -290,8 +290,8 @@ class Nuc_Seg(Dataset):
     def __len__(self):
         return len(self.images_np)
     
-    def __getitem__(self, idx):
-        print("idx",idx)
+    def __getitem__(self,idx):
+        #print("idx",idx)
         image_np = self.images_np#[idx]
         mask_np = self.masks_np#[idx]
         #plt.imshow(mask_np)
@@ -307,6 +307,7 @@ class Nuc_Seg(Dataset):
         boxes = []
         for i in range(num_objs):
             pos = np.where(masks[i])
+            #print("pos",pos)
             xmin = np.min(pos[1])
             xmax = np.max(pos[1])
             ymin = np.min(pos[0])
