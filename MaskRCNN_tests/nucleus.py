@@ -93,6 +93,8 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
 #%% param
 n_epochs = 2#00
+hidden_layer = 10#256
+
 device = torch.device('cuda')
 image_size=1024#imgage_size
 
@@ -150,8 +152,7 @@ class NucleusCellDataset(object):
 
         # instances are encoded as different colors
         obj_ids = np.unique(mask)
-        plt.imshow(mask)
-        plt.show()
+    
         #print("shapeeee",mask)
 
         # first id is the background, so remove it
@@ -179,7 +180,7 @@ class NucleusCellDataset(object):
           # print(A)
           if A < 5:
             print('Nr before deletion:', num_objs)
-            obj_ids=np.delete(obj_ids, [i])
+            #obj_ids=np.delete(obj_ids, [i])
             # print('Area smaller than 5! Box coordinates:', [xmin, ymin, xmax, ymax])
             print('Nr after deletion:', len(obj_ids))
             continue
@@ -354,14 +355,13 @@ data_loader_train = DataLoader(dataset_train, batch_size=4, shuffle=True,collate
 #%%
 num_classes = 2
 # load an instance segmentation model pre-trained pre-trained on COCO
-model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(weights="MaskRCNN_ResNet50_FPN_V2_Weights.COCO_V1")
+model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(weights="MaskRCNN_ResNet50_FPN_V2_Weights.COCO_V2")
 # get number of input features for the classifier
 in_features = model.roi_heads.box_predictor.cls_score.in_features
 # replace the pre-trained head with a new one
 model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 # now get the number of input features for the mask classifier
 in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-hidden_layer = 10#256
 # and replace the mask predictor with a new one
 model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
                                                     hidden_layer,
