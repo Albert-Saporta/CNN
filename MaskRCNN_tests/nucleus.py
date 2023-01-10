@@ -111,7 +111,6 @@ pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 
 root_train=cluster_train
 root_test=cluster_test
-device = torch.device('cuda')
 #%% function
 class NucleusCellDataset(object):
     def __init__(self, root, transforms=None): # transforms
@@ -132,8 +131,8 @@ class NucleusCellDataset(object):
     def __getitem__(self, idx):
         # idx sometimes goes over the nr of training images, add logic to keep it lower
         #print("idx",idx)
-        if idx >= 35:
-            idx = np.random.randint(35, size=1)[0]
+        #if idx >= 35:
+        #idx = np.random.randint(35, size=1)[0]
         # print(idx)
         # load images ad masks
         # print('idx:', idx)
@@ -176,22 +175,12 @@ class NucleusCellDataset(object):
           ymin = np.min(pos[0])
           ymax = np.max(pos[0])
           # Check if area is larger than a threshold
-          A = abs((xmax-xmin) * (ymax-ymin)) 
-          # print(A)
-          if A < 5:
-            print('Nr before deletion:', num_objs)
-            #obj_ids=np.delete(obj_ids, [i])
-            # print('Area smaller than 5! Box coordinates:', [xmin, ymin, xmax, ymax])
-            print('Nr after deletion:', len(obj_ids))
-            continue
-            # xmax=xmax+5 
-            # ymax=ymax+5
+      
 
           boxes.append([xmin, ymin, xmax, ymax])
           #print("boxes",boxes)
 
         # print('nr boxes is equal to nr ids:', len(boxes)==len(obj_ids))
-        num_objs = len(obj_ids)
         # convert everything into a torch.Tensor
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         # there is only one class
@@ -355,7 +344,7 @@ data_loader_train = DataLoader(dataset_train, batch_size=4, shuffle=True,collate
 #%%
 num_classes = 2
 # load an instance segmentation model pre-trained pre-trained on COCO
-model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(weights="MaskRCNN_ResNet50_FPN_V2_Weights.COCO_V2")
+model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(weights="MaskRCNN_ResNet50_FPN_V2_Weights.COCO_V1")
 # get number of input features for the classifier
 in_features = model.roi_heads.box_predictor.cls_score.in_features
 # replace the pre-trained head with a new one
