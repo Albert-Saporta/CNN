@@ -77,7 +77,7 @@ pth_name="maskrcnn_nucleus"
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 
 
-TRAIN_PATH=cluster_train
+TRAIN_PATH=local_train
 
 train_files = next(os.walk(TRAIN_PATH))[1]
 print(train_files)
@@ -92,7 +92,7 @@ print('Getting training data...')
 def load_image_mask():
     for n, id_ in tqdm(enumerate(train_files), total = len(train_files)):
         img_path = TRAIN_PATH + id_ + '/images/' + id_ + '.png'
-        img = imread(img_path)[:,:,:3]
+        img = imread(img_path)#[:,:,:3]
         #img = resize(img, (image_size, image_size), mode='constant', preserve_range=True)
         print(img.shape)
 
@@ -116,6 +116,7 @@ def load_image_mask():
             mask = np.maximum(mask, mask_)
             """
         mask_ = np.stack(mask_, axis=-1)
+        print(mask.shape)
         _idx = np.sum(mask_, axis=(0, 1)) > 0
         masktt = mask_[:, :, _idx]
         #print("test3",img.shape)
@@ -301,13 +302,13 @@ class Nuc_Seg():
         obj_ids = obj_ids[1:]
         num_objs = len(obj_ids)
         print("num_objs",num_objs)
-        masks = mask_np# == obj_ids[:, None, None]
-        print("shapeeee",masks.shape)
+        masks = mask_np#== obj_ids[:, None, None]
+        #print("num_objs",masks.shape)
 
         boxes = []
         for i in range(num_objs):
             pos = np.where(masks[i])
-            #print("pos",pos)
+            print("pos",pos[1].shape)
             xmin = np.min(pos[1])
             xmax = np.max(pos[1])
             ymin = np.min(pos[0])

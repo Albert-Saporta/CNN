@@ -98,6 +98,9 @@ class WarwickCellDataset(object):
         boxes = []
         for i in range(num_objs):
           pos = np.where(masks[i])
+          print(num_objs)
+          print("pos",pos[1].shape)
+
           xmin = np.min(pos[1])
           xmax = np.max(pos[1])
           ymin = np.min(pos[0])
