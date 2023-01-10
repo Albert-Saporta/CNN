@@ -61,27 +61,6 @@ from skimage.transform import resize
 
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
-
-#%% param
-n_epochs = 2#00
-device = torch.device('cuda')
-image_size=1024#imgage_size
-#%% path
-
-local_train = "C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/stage1_train/"
-cluster_train="/bigdata/casus/optima/data/cell_nucleus/stage1_train/"
-local_test = "C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/stage1_test/"
-cluster_test="/bigdata/casus/optima/data/cell_nucleus/stage1_test/"
-
-pth_name="maskrcnn_nucleus"
-pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
-
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jan  6 10:36:52 2023
-
-@author: alber
-"""
 #!pip install numpy 
 #https://bjornkhansen95.medium.com/mask-r-cnn-for-segmentation-using-pytorch-8bbfa8511883
 #https://colab.research.google.com/drive/11FN5yQh1X7x-0olAOx7EJbwEey5jamKl?usp=sharing
@@ -111,6 +90,14 @@ from matplotlib import patches
 from tqdm import tqdm
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+
+#%% param
+n_epochs = 2#00
+device = torch.device('cuda')
+image_size=1024#imgage_size
+
+
+
 #%%
 local_train = "C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/train"
 cluster_train="/bigdata/casus/optima/data/cell_nucleus/train"
@@ -120,7 +107,7 @@ cluster_test="/bigdata/casus/optima/data/cell_nucleus/test"
 pth_name="maskrcnn_nucleus"
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 
-root_train=cluster_train
+root_train=local_train
 root_test=cluster_test
 device = torch.device('cuda')
 #%% function
@@ -142,8 +129,9 @@ class NucleusCellDataset(object):
 
     def __getitem__(self, idx):
         # idx sometimes goes over the nr of training images, add logic to keep it lower
-        if idx >= 64:
-            idx = np.random.randint(64, size=1)[0]
+        #print("idx",idx)
+        if idx >= 35:
+            idx = np.random.randint(35, size=1)[0]
         # print(idx)
         # load images ad masks
         # print('idx:', idx)
@@ -155,7 +143,7 @@ class NucleusCellDataset(object):
         # because each color corresponds to a different instance
         # with 0 being background
         mask = Image.open(mask_path).convert('L')
-        print("type",type(mask),mask)
+        #print("type",type(mask),mask)
 
         mask = np.array(mask)
         # convert the PIL Image into a numpy array
@@ -164,7 +152,7 @@ class NucleusCellDataset(object):
         obj_ids = np.unique(mask)
         plt.imshow(mask)
         plt.show()
-        print("shapeeee",obj_ids)
+        #print("shapeeee",mask)
 
         # first id is the background, so remove it
         obj_ids = obj_ids[1:]
@@ -180,7 +168,7 @@ class NucleusCellDataset(object):
         for i in range(num_objs):
           pos = np.where(masks[i])
           print(num_objs)
-          print("pos",pos[1].shape)
+          #print("pos",pos[1].shape)
 
           xmin = np.min(pos[1])
           xmax = np.max(pos[1])
@@ -218,7 +206,7 @@ class NucleusCellDataset(object):
           img = i(img)
         #print(img.shape,masks.shape)
         target = {}
-        print(masks.shape,img.shape)
+        #print(masks.shape,img.shape)
 
         target["boxes"] = boxes
         target["labels"] = labels
@@ -373,7 +361,7 @@ in_features = model.roi_heads.box_predictor.cls_score.in_features
 model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 # now get the number of input features for the mask classifier
 in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-hidden_layer = 256
+hidden_layer = 10#256
 # and replace the mask predictor with a new one
 model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
                                                     hidden_layer,
@@ -384,7 +372,6 @@ optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0005)
 
 #%% train
 loss_list = []
-n_epochs = 2#100
 model.train()
 for epoch in range(n_epochs):
     loss_epoch = []
@@ -397,7 +384,7 @@ for epoch in range(n_epochs):
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        print(targets)
+        #print(targets)
         optimizer.zero_grad()
         model=model.double()
         loss_dict = model(images, targets)
@@ -408,14 +395,7 @@ for epoch in range(n_epochs):
         # loss_epoch.append(losses.item())
         loss_epoch.append(losses.item())
         # Plot loss every 10th iteration
-        """
-        plt.figure()
-        plt.plot(list(range(iteration)), loss_epoch)
-        plt.xlabel("Iteration")
-        plt.ylabel("Loss")
-        plt.savefig(pth_path_cluster+f'Learning_Curves_.pdf',format='pdf')
-        #plt.show()
-        """
+
         iteration+=1
     loss_epoch_mean = np.mean(loss_epoch) 
     loss_list.append(loss_epoch_mean) 
