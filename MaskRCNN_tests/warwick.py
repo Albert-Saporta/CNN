@@ -14,7 +14,7 @@ import torch.nn.functional as F
 import torchvision
 from torchvision import models
 import torchvision.transforms as T
-
+import cv2
 from torchsummary import summary
 
 import torch.optim as optim
@@ -77,10 +77,10 @@ class WarwickCellDataset(object):
         # because each color corresponds to a different instance
         # with 0 being background
         mask = Image.open(mask_path)
-        print("type",type(mask),mask)
+        #print("type",type(mask),mask)
         # convert the PIL Image into a numpy array
         mask = np.array(mask)
-        print("shapeeee",mask)
+        #print("shapeeee",mask)
 
         # instances are encoded as different colors
         obj_ids = np.unique(mask)
@@ -88,6 +88,8 @@ class WarwickCellDataset(object):
 
         # first id is the background, so remove it
         obj_ids = obj_ids[1:]
+        print(obj_ids)
+
         plt.imshow(mask)
         plt.show()
         # split the color-encoded mask into a set
@@ -101,7 +103,7 @@ class WarwickCellDataset(object):
         for i in range(num_objs):
           pos = np.where(masks[i])
           #print(num_objs)
-          print("pos",pos[1].shape)
+          #print("pos",pos[1].shape)
 
           xmin = np.min(pos[1])
           xmax = np.max(pos[1])
@@ -137,7 +139,6 @@ class WarwickCellDataset(object):
 
         for i in self.transforms:
           img = i(img)
-        #print(img.shape,masks.shape)
         target = {}
         print(masks.shape,img.shape)
 
@@ -299,6 +300,8 @@ hidden_layer = 256
 model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
                                                     hidden_layer,
                                                     num_classes)
+print(in_features,in_features_mask)
+
 model=model.to(device)
 params = [p for p in model.parameters() if p.requires_grad]
 optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0005)

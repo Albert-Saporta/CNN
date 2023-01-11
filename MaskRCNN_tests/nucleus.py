@@ -5,7 +5,7 @@ Created on Mon Jan  9 16:19:51 2023
 @author: alber
 """
 #https://www.kaggle.com/code/tjac718/semantic-segmentation-of-nuclei-pytorch
-
+#%% import
 import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
@@ -13,7 +13,7 @@ import torch.nn.functional as F
 import torchvision
 from torchvision import models
 import torchvision.transforms as T
-
+import cv2
 from torchsummary import summary
 
 import torch.optim as optim
@@ -33,15 +33,16 @@ from tqdm import tqdm
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
-
+#%% issues
+# in feature,in feature mask 1024, 256??
 #%% param
-n_epochs = 2#00
+n_epochs = 100
 hidden_layer = 256
 
 device = torch.device('cuda')
-image_size=1024#imgage_size
+image_size=600#imgage_size
 
-#%%
+#%% path
 local_train = "C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/train"
 cluster_train="/bigdata/casus/optima/data/cell_nucleus/train"
 local_test = "C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/test"
@@ -63,33 +64,33 @@ class NucleusCellDataset(object):
         # load all image files, sorting them to
         # ensure that they are aligned
         self.imgs = list(natsorted(os.listdir(os.path.join(root, "image"))))
-        print('imgs file names:', self.imgs)
+        #print('imgs file names:', self.imgs)
         
         self.masks = list(natsorted(os.listdir(os.path.join(root, "mask"))))
         #self.masks = list(natsorted(os.listdir(root+"/mask")))
-        print('masks file names:', self.masks)
+        #print('masks file names:', self.masks)
 
     def __getitem__(self, idx):
         # idx sometimes goes over the nr of training images, add logic to keep it lower
         #print("idx",idx)
         #if idx >= 35:
         #idx = np.random.randint(35, size=1)[0]
-        # print(idx)
         # load images ad masks
         img_path = os.path.join(self.root, "image", self.imgs[idx])
-        # print('img_path', img_path)
         mask_path = os.path.join(self.root, "mask", self.masks[idx])
         img = Image.open(img_path).convert("RGB")
+        #plt.imshow(img)
+        #plt.show()
         # note that we haven't converted the mask to RGB,
         # because each color corresponds to a different instance
         # with 0 being background
         mask = Image.open(mask_path).convert('L')
-        #print("type",type(mask),mask)
         mask = np.array(mask)
+        #plt.imshow(mask)
+        #plt.show()
         # convert the PIL Image into a numpy array
         # instances are encoded as different colors
         obj_ids = np.unique(mask)
-        #print("shapeeee",mask)
         # first id is the background, so remove it
         obj_ids = obj_ids[1:]
         # split the color-encoded mask into a set
@@ -98,11 +99,11 @@ class NucleusCellDataset(object):
         # get bounding box coordinates for each mask
         num_objs = len(obj_ids)
 
-        # print(num_objs)
+        #print(obj_ids)
         boxes = []
         for i in range(num_objs):
           pos = np.where(masks[i])
-          print(num_objs)
+          #print(num_objs)
           #print("pos",pos[1].shape)
 
           xmin = np.min(pos[1])
@@ -113,7 +114,7 @@ class NucleusCellDataset(object):
           A = abs((xmax-xmin) * (ymax-ymin)) 
           # print(A)
           if A < 5:
-            print('Nr before deletion:', num_objs)
+            #print('Nr before deletion:', num_objs)
             #obj_ids=np.delete(obj_ids, [i])
             # print('Area smaller than 5! Box coordinates:', [xmin, ymin, xmax, ymax])
             #print('Nr after deletion:', len(obj_ids))
@@ -136,9 +137,13 @@ class NucleusCellDataset(object):
 
         for i in self.transforms:
           img = i(img)
-        #print(img.shape,masks.shape)
         target = {}
         #print(masks.shape,img.shape)
+        resize_transfo = T.Resize(image_size)
+        img=resize_transfo(img)
+        masks=resize_transfo(masks)
+
+        #print("test",img.shape,masks.shape)
 
         target["boxes"] = boxes
         target["labels"] = labels
@@ -276,14 +281,14 @@ def draw_segmentation_map(image, masks, boxes, labels):
                     thickness=2, lineType=cv2.LINE_AA)
     
     return image
-#%%
+#%% dataset
 dataset_train = NucleusCellDataset(root_train, transforms=torchvision.transforms.ToTensor()) # get_transform(train=True)
 #print(dataset_train[3][1])
-data_loader_train = DataLoader(dataset_train, batch_size=4, shuffle=True,collate_fn=lambda x:list(zip(*x)))
+data_loader_train = DataLoader(dataset_train, batch_size=4, shuffle=True,collate_fn=lambda x:list(zip(*x)),pin_memory=True)
 #%% visu
 #images,labels=next(iter(data_loader_train))
 #view(images=images,labels=labels,n=2,std=1,mean=0)
-#%%
+#%% model
 num_classes = 2
 # load an instance segmentation model pre-trained pre-trained on COCO
 model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(weights="MaskRCNN_ResNet50_FPN_V2_Weights.COCO_V1")
@@ -297,6 +302,7 @@ in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
 model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
                                                     hidden_layer,
                                                     num_classes)
+#print(in_features,in_features_mask)
 model=model.to(device)
 params = [p for p in model.parameters() if p.requires_grad]
 optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0005)
@@ -310,8 +316,6 @@ for epoch in range(n_epochs):
     train_loop=tqdm(data_loader_train)
     for images,targets in train_loop:
         train_loop.set_description(f'Epoch {epoch+1}/{n_epochs}')
-        #print(images[0].shape,targets[0]["labels"].shape)
-
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
