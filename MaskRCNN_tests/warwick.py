@@ -4,6 +4,10 @@ Created on Fri Jan  6 10:36:52 2023
 
 @author: alber
 """
+#%% Notes
+#removed delete objet id area <5
+
+#%% import
 #!pip install numpy 
 #https://bjornkhansen95.medium.com/mask-r-cnn-for-segmentation-using-pytorch-8bbfa8511883
 #https://colab.research.google.com/drive/11FN5yQh1X7x-0olAOx7EJbwEey5jamKl?usp=sharing
@@ -14,7 +18,9 @@ import torch.nn.functional as F
 import torchvision
 from torchvision import models
 import torchvision.transforms as T
-import cv2
+
+
+
 from torchsummary import summary
 
 import torch.optim as optim
@@ -42,10 +48,18 @@ cluster_test="/bigdata/casus/optima/Warwick_QU/test"
 pth_name="maskrcnn"
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 
-root_train=local_train
+root_train=cluster_train
 root_test=cluster_test
 device = torch.device('cuda')
 #%% function
+def bbox_to_rect(bbox, color):
+    """Convert bounding box to matplotlib format."""
+    # Convert the bounding box (upper-left x, upper-left y, lower-right x,
+    # lower-right y) format to the matplotlib format: ((upper-left x,
+    # upper-left y), width, height)
+    return d2l.plt.Rectangle(
+        xy=(bbox[0], bbox[1]), width=bbox[2]-bbox[0], height=bbox[3]-bbox[1],
+        fill=False, edgecolor=color, linewidth=2)
 class WarwickCellDataset(object):
     def __init__(self, root, transforms=None): # transforms
         self.root = root
@@ -56,11 +70,11 @@ class WarwickCellDataset(object):
         # load all image files, sorting them to
         # ensure that they are aligned
         self.imgs = list(natsorted(os.listdir(os.path.join(root, "image"))))
-        print('imgs file names:', self.imgs)
+        #print('imgs file names:', self.imgs)
         
         self.masks = list(natsorted(os.listdir(os.path.join(root, "mask"))))
         #self.masks = list(natsorted(os.listdir(root+"/mask")))
-        print('masks file names:', self.masks)
+        #print('masks file names:', self.masks)
 
     def __getitem__(self, idx):
         # idx sometimes goes over the nr of training images, add logic to keep it lower
@@ -88,10 +102,10 @@ class WarwickCellDataset(object):
 
         # first id is the background, so remove it
         obj_ids = obj_ids[1:]
-        print(obj_ids)
+        #print(obj_ids)
 
-        plt.imshow(mask)
-        plt.show()
+        #plt.imshow(mask)
+        #plt.show()
         # split the color-encoded mask into a set
         # of binary masks
         masks = mask == obj_ids[:, None, None]
@@ -114,7 +128,7 @@ class WarwickCellDataset(object):
           # print(A)
           if A < 5:
             print('Nr before deletion:', num_objs)
-            obj_ids=np.delete(obj_ids, [i])
+            #obj_ids=np.delete(obj_ids, [i])
             # print('Area smaller than 5! Box coordinates:', [xmin, ymin, xmax, ymax])
             print('Nr after deletion:', len(obj_ids))
             continue
@@ -126,21 +140,24 @@ class WarwickCellDataset(object):
 
         # print('nr boxes is equal to nr ids:', len(boxes)==len(obj_ids))
         num_objs = len(obj_ids)
+   
+        masks = torch.as_tensor(masks, dtype=torch.uint8)
+
         # convert everything into a torch.Tensor
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         # there is only one class
         labels = torch.ones((num_objs,), dtype=torch.int64)
-        masks = torch.as_tensor(masks, dtype=torch.uint8)
 
         image_id = torch.tensor([idx])
         area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
         # suppose all instances are not crowd
         iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
-
+     
+        
         for i in self.transforms:
-          img = i(img)
+            img = i(img)
         target = {}
-        print(masks.shape,img.shape)
+ 
 
         target["boxes"] = boxes
         target["labels"] = labels

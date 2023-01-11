@@ -13,7 +13,7 @@ from coco_names import COCO_INSTANCE_CATEGORY_NAMES as coco_names
 
 #%% Different color for each class
 COLORS = np.random.uniform(0, 255, size=(len(coco_names), 3))
-
+print(len(COLORS))
 #%% Functions
 
 def get_outputs(image, model, threshold):
@@ -51,6 +51,7 @@ def draw_segmentation_map(image, masks, boxes, labels):
         red_map[masks[i] == 1], green_map[masks[i] == 1], blue_map[masks[i] == 1]  = color
         # combine all the masks into a single image
         segmentation_map = np.stack([red_map, green_map, blue_map], axis=2)
+        print(segmentation_map.shape)
         #convert the original PIL image into NumPy format
         image = np.array(image)
         # convert from RGN to OpenCV BGR format

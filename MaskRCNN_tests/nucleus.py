@@ -5,16 +5,31 @@ Created on Mon Jan  9 16:19:51 2023
 @author: alber
 """
 #https://www.kaggle.com/code/tjac718/semantic-segmentation-of-nuclei-pytorch
+
+#%% notes
+#removed resize
+
 #%% import
 import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.transforms.functional as Ft
+
 import torchvision
 from torchvision import models
 import torchvision.transforms as T
+from torchvision.utils import draw_bounding_boxes,draw_segmentation_masks
+
+from torchvision.ops import masks_to_boxes
+from torchvision.io import read_image
+"""
+from d2l import torch as d2l
 import cv2
+import colorsys
+"""
 from torchsummary import summary
+import random
 
 import torch.optim as optim
 from torch.autograd import Variable
@@ -22,11 +37,13 @@ from time import time
 from natsort import natsorted
 import os
 #os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
-
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 #%matplotlib inline 
+from matplotlib.patches import Polygon
+from skimage.measure import find_contours
+
 import matplotlib.patches as mpatches
 from matplotlib import patches
 from tqdm import tqdm
@@ -36,11 +53,13 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 #%% issues
 # in feature,in feature mask 1024, 256??
 #%% param
-n_epochs = 100
+n_epochs = 25
 hidden_layer = 256
+lr=0.005
+batch_size=4
 
 device = torch.device('cuda')
-image_size=600#imgage_size
+image_size=600
 
 #%% path
 local_train = "C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/train"
@@ -54,107 +73,7 @@ pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 root_train=cluster_train
 root_test=cluster_test
 #%% function
-class NucleusCellDataset(object):
-    def __init__(self, root, transforms=None): # transforms
-        self.root = root
-        # self.transforms = transforms
-        self.transforms=[]
-        if transforms!=None:
-          self.transforms.append(transforms)
-        # load all image files, sorting them to
-        # ensure that they are aligned
-        self.imgs = list(natsorted(os.listdir(os.path.join(root, "image"))))
-        #print('imgs file names:', self.imgs)
-        
-        self.masks = list(natsorted(os.listdir(os.path.join(root, "mask"))))
-        #self.masks = list(natsorted(os.listdir(root+"/mask")))
-        #print('masks file names:', self.masks)
 
-    def __getitem__(self, idx):
-        # idx sometimes goes over the nr of training images, add logic to keep it lower
-        #print("idx",idx)
-        #if idx >= 35:
-        #idx = np.random.randint(35, size=1)[0]
-        # load images ad masks
-        img_path = os.path.join(self.root, "image", self.imgs[idx])
-        mask_path = os.path.join(self.root, "mask", self.masks[idx])
-        img = Image.open(img_path).convert("RGB")
-        #plt.imshow(img)
-        #plt.show()
-        # note that we haven't converted the mask to RGB,
-        # because each color corresponds to a different instance
-        # with 0 being background
-        mask = Image.open(mask_path).convert('L')
-        mask = np.array(mask)
-        #plt.imshow(mask)
-        #plt.show()
-        # convert the PIL Image into a numpy array
-        # instances are encoded as different colors
-        obj_ids = np.unique(mask)
-        # first id is the background, so remove it
-        obj_ids = obj_ids[1:]
-        # split the color-encoded mask into a set
-        # of binary masks
-        masks = mask == obj_ids[:, None, None]
-        # get bounding box coordinates for each mask
-        num_objs = len(obj_ids)
-
-        #print(obj_ids)
-        boxes = []
-        for i in range(num_objs):
-          pos = np.where(masks[i])
-          #print(num_objs)
-          #print("pos",pos[1].shape)
-
-          xmin = np.min(pos[1])
-          xmax = np.max(pos[1])
-          ymin = np.min(pos[0])
-          ymax = np.max(pos[0])
-          # Check if area is larger than a threshold
-          A = abs((xmax-xmin) * (ymax-ymin)) 
-          # print(A)
-          if A < 5:
-            #print('Nr before deletion:', num_objs)
-            #obj_ids=np.delete(obj_ids, [i])
-            # print('Area smaller than 5! Box coordinates:', [xmin, ymin, xmax, ymax])
-            #print('Nr after deletion:', len(obj_ids))
-            continue
-
-          boxes.append([xmin, ymin, xmax, ymax])
-          #print("boxes",boxes)
-
-        # print('nr boxes is equal to nr ids:', len(boxes)==len(obj_ids))
-        # convert everything into a torch.Tensor
-        boxes = torch.as_tensor(boxes, dtype=torch.float32)
-        # there is only one class
-        labels = torch.ones((num_objs,), dtype=torch.int64)
-        masks = torch.as_tensor(masks, dtype=torch.uint8)
-
-        image_id = torch.tensor([idx])
-        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
-        # suppose all instances are not crowd
-        iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
-
-        for i in self.transforms:
-          img = i(img)
-        target = {}
-        #print(masks.shape,img.shape)
-        resize_transfo = T.Resize(image_size)
-        img=resize_transfo(img)
-        masks=resize_transfo(masks)
-
-        #print("test",img.shape,masks.shape)
-
-        target["boxes"] = boxes
-        target["labels"] = labels
-        target["masks"] = masks
-        #target["labels"] = labels # Not sure if this is needed
-        #print("labels",target["labels"].shape)
-
-        return img.double(), target
-
-    def __len__(self):
-        return len(self.imgs)
     
 def view(images,labels,n=2,std=1,mean=0):
     figure = plt.figure(figsize=(15,10))
@@ -254,6 +173,9 @@ def get_outputs(image, model, threshold):
     return masks, boxes, labels
 
 def draw_segmentation_map(image, masks, boxes, labels):
+    COLORS = np.random.uniform(0, 255, size=(len(labels), 3))
+    print(len(COLORS))
+
     alpha = 1 
     beta = 0.6 # transparency for the segmentation map
     gamma = 0 # scalar added to each sum
@@ -281,10 +203,131 @@ def draw_segmentation_map(image, masks, boxes, labels):
                     thickness=2, lineType=cv2.LINE_AA)
     
     return image
+
+
+        
+class NucleusCellDataset(object):
+    def __init__(self, root, transforms=None): # transforms
+        self.root = root
+        # self.transforms = transforms
+        self.transforms=[]
+        if transforms!=None:
+          self.transforms.append(transforms)
+        # load all image files, sorting them to
+        # ensure that they are aligned
+        self.imgs = list(natsorted(os.listdir(os.path.join(root, "image"))))
+        #print('imgs file names:', self.imgs)
+        
+        self.masks = list(natsorted(os.listdir(os.path.join(root, "mask"))))
+        #self.masks = list(natsorted(os.listdir(root+"/mask")))
+        #print('masks file names:', self.masks)
+
+    def __getitem__(self, idx):
+        # idx sometimes goes over the nr of training images, add logic to keep it lower
+        #print("idx",idx)
+        #if idx >= 35:
+        #idx = np.random.randint(35, size=1)[0]
+        # load images ad masks
+        img_path = os.path.join(self.root, "image", self.imgs[idx])
+        mask_path = os.path.join(self.root, "mask", self.masks[idx])
+        img = Image.open(img_path).convert("RGB")
+   
+        # note that we haven't converted the mask to RGB,
+        # because each color corresponds to a different instance
+        # with 0 being background
+
+        mask = Image.open(mask_path).convert('L')
+        mask = np.array(mask)
+  
+        #plt.imshow(mask)
+        #plt.show()
+        # convert the PIL Image into a numpy array
+        # instances are encoded as different colors
+        obj_ids = np.unique(mask)
+        # first id is the background, so remove it
+        obj_ids = obj_ids[1:]
+        # split the color-encoded mask into a set
+        # of binary masks
+        masks = mask == obj_ids[:, None, None]
+        # get bounding box coordinates for each mask
+        num_objs = len(obj_ids)
+
+        #print(obj_ids)
+        boxes = []
+        for i in range(num_objs):
+            pos = np.where(masks[i])
+            #print(num_objs)
+            #print("pos",pos[1].shape)
+    
+            xmin = np.min(pos[1])
+            xmax = np.max(pos[1])
+            ymin = np.min(pos[0])
+            ymax = np.max(pos[0])
+            # Check if area is larger than a threshold
+            A = abs((xmax-xmin) * (ymax-ymin)) 
+            #print("area",A)
+            if A < 5:
+                #print('Nr before deletion:', num_objs)
+                #obj_ids=np.delete(obj_ids, [i])
+                # print('Area smaller than 5! Box coordinates:', [xmin, ymin, xmax, ymax])
+                #print('Nr after deletion:', len(obj_ids))
+                continue
+
+            boxes.append([xmin, ymin, xmax, ymax])
+        # print('nr boxes is equal to nr ids:', len(boxes)==len(obj_ids))
+        # convert everything into a torch.Tensor
+        #bbox=bbox_to_rect(boxes[0], "red")
+        #plt.imshow(bbox)
+        labels = torch.ones((num_objs,), dtype=torch.int64)
+        masks = torch.as_tensor(masks, dtype=torch.uint8)
+
+
+     
+
+        
+        # split the color-encoded mask into a set of boolean masks.
+        # Note that this snippet would work as well if the masks were float values instead of ints.
+        #print("trest",maskst.size())
+     
+        #print(boxes.size())
+        boxes = torch.as_tensor(boxes, dtype=torch.float32)
+        #print("boxes",boxes.size())
+
+
+        image_id = torch.tensor([idx])
+        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
+        # suppose all instances are not crowd
+        iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
+
+        for i in self.transforms:
+            img = i(img)
+        #img =torch.as_tensor(img, dtype=torch.uint8)
+        target = {}
+        #print(masks.shape,img.shape)
+        #print("img",img.size())
+  
+        
+        resize_transfo = T.Resize(image_size)
+        """virer resize?? fausse location mask boxes??"""
+        #img=resize_transfo(img)
+        #masks=resize_transfo(masks)
+        #draw_segmentation_map(img,masks,boxes,labels)
+        #print("test",img.shape,masks.shape)
+
+        target["boxes"] = boxes
+        target["labels"] = labels
+        target["masks"] = masks
+        #target["labels"] = labels # Not sure if this is needed
+        #print("labels",target["labels"].shape)
+  
+        return img.double(), target
+
+    def __len__(self):
+        return len(self.imgs)
 #%% dataset
 dataset_train = NucleusCellDataset(root_train, transforms=torchvision.transforms.ToTensor()) # get_transform(train=True)
 #print(dataset_train[3][1])
-data_loader_train = DataLoader(dataset_train, batch_size=4, shuffle=True,collate_fn=lambda x:list(zip(*x)),pin_memory=True)
+data_loader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True,collate_fn=lambda x:list(zip(*x)),pin_memory=True)
 #%% visu
 #images,labels=next(iter(data_loader_train))
 #view(images=images,labels=labels,n=2,std=1,mean=0)
@@ -305,7 +348,7 @@ model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
 #print(in_features,in_features_mask)
 model=model.to(device)
 params = [p for p in model.parameters() if p.requires_grad]
-optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0005)
+optimizer = torch.optim.SGD(params, lr=lr, momentum=0.9, weight_decay=0.0005)
 
 #%% train
 loss_list = []
@@ -318,8 +361,7 @@ for epoch in range(n_epochs):
         train_loop.set_description(f'Epoch {epoch+1}/{n_epochs}')
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-
-        #print(targets)
+      
         optimizer.zero_grad()
         model=model.double()
         loss_dict = model(images, targets)
@@ -458,6 +500,7 @@ for i in range(2):
 IoU(y_real=target_im, y_pred=output_im) 
 
 len(output[0]['masks'])
+#%% revoir
 plt.figure()
 im = output[0]['masks'][0][0, :, :].cpu().detach().numpy()
 # im2 = outputs[0]['masks'][1][0, :, :].cpu().detach().numpy()
@@ -475,3 +518,5 @@ im[im<0.5] = 0
 plt.savefig(pth_path_cluster+'figure/masks_finaux.pdf',format='pdf')
 #plt.imshow(im, cmap='Greys')
 # outputs[0]['masks']
+
+#%%% ajouter segmentation map

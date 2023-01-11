@@ -43,6 +43,8 @@ image = transform(image)
 # add a batch dimension
 image = image.unsqueeze(0).to(device)
 masks, boxes, labels = get_outputs(image, model, 0.965)
+print(orig_image, masks)
+
 result = draw_segmentation_map(orig_image, masks, boxes, labels)
 # visualize the image
 cv2.imshow('Segmented image', result)
