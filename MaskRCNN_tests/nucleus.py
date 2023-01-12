@@ -67,7 +67,7 @@ def nucleus(n_epoch,date,pth_name):
     n_epochs=int(n_epoch)
     hidden_layer = 256
     lr=0.02
-    batch_size=4
+    batch_size=8
     device = torch.device('cuda')
     image_size=600
     if torch.cuda.device_count() > 1:
@@ -334,7 +334,6 @@ def nucleus(n_epoch,date,pth_name):
     # load an instance segmentation model pre-trained pre-trained on COCO
     model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(weights="MaskRCNN_ResNet50_FPN_V2_Weights.COCO_V1")
     
-    model=nn.DataParallel(model)
     
     # get number of input features for the classifier
     in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -344,6 +343,8 @@ def nucleus(n_epoch,date,pth_name):
     in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
     # and replace the mask predictor with a new one
     model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,hidden_layer, num_classes)
+    model=nn.DataParallel(model)
+
     model=model.to(device)
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params, lr=lr, momentum=0.9, weight_decay=0.0005)
