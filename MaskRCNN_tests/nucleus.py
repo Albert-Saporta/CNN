@@ -67,7 +67,7 @@ def nucleus(n_epoch,date,pth_name):
     n_epochs=int(n_epoch)
     hidden_layer = 256
     lr=0.02
-    batch_size=8
+    batch_size=16
     device = torch.device('cuda')
     image_size=600
     if torch.cuda.device_count() > 1:
