@@ -80,7 +80,7 @@ def nucleus(n_epoch,date,pth_name):
     #pth_name="maskrcnn_nucleus"
     pth_path_cluster="/bigdata/casus/optima/hemera_results/maskrcnn_nucleus/"+str(date)+"/"
     
-    root_train=cluster_test
+    root_train=cluster_train
     root_test=cluster_test
     path_date_pth=pth_path_cluster+pth_name+"_"+n_epoch+"epochs"+"/"
     path_figure=pth_path_cluster+pth_name+"/"+"figure/"
