@@ -70,7 +70,8 @@ def nucleus(n_epoch,date,pth_name):
     batch_size=4
     device = torch.device('cuda')
     image_size=600
-    
+    if torch.cuda.device_count() > 1:
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
     #%% path
     local_train = "C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/train"
     cluster_train="/bigdata/casus/optima/data/cell_nucleus/train"
@@ -83,7 +84,7 @@ def nucleus(n_epoch,date,pth_name):
     root_train=cluster_train
     root_test=cluster_test
     path_date_pth=pth_path_cluster+pth_name+"_"+n_epoch+"epochs"+"/"
-    path_figure=pth_path_cluster+pth_name+"/"+"figure/"
+    path_figure=path_date_pth+"figure/"
 
     if os.path.exists(pth_path_cluster)==True:
         pass
@@ -332,6 +333,9 @@ def nucleus(n_epoch,date,pth_name):
     num_classes = 2
     # load an instance segmentation model pre-trained pre-trained on COCO
     model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(weights="MaskRCNN_ResNet50_FPN_V2_Weights.COCO_V1")
+    
+    model=nn.DataParallel(model)
+    
     # get number of input features for the classifier
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     # replace the pre-trained head with a new one

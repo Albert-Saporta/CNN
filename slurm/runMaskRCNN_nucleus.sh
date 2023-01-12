@@ -6,8 +6,8 @@
 #SBATCH --mem 100000
 #SBATCH --nodes=1        # number of nodes
 ##SBATCH -C v100-32g
-#SBATCH --gres=gpu:2
-#SBATCH --ntasks=2     # number of tasks (i.e. parallel processes) to be started
+#SBATCH --gres=gpu:8
+#SBATCH --ntasks=8   #number of tasks (i.e. parallel processes) to be started
 #SBATCH --output=maskrcnn%j.out      # nom du fichier de sortie
 #SBATCH --error=maskrcnn%j.out       # nom du fichier d'erreur (ici commun avec la sortie)
 #SBATCH --mail-user=$asaporta@eisbm.org
@@ -24,5 +24,5 @@ module load python/3.9.6
 
 
 # Execute your code
-python /bigdata/casus/optima/scripts/CNN/MaskRCNN_tests/nucleus.py -ne 25 -d "12_01" -n "test"
+python /bigdata/casus/optima/scripts/CNN/MaskRCNN_tests/nucleus.py -ne 2 -d "12_01" -n "test_parallel"
 
