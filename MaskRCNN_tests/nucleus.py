@@ -80,7 +80,7 @@ def nucleus(date,pth_name):
     cluster_test="/bigdata/casus/optima/data/cell_nucleus/test"
     
     #pth_name="maskrcnn_nucleus"
-    pth_path_cluster="/bigdata/casus/optima/hemera_results/maskrcnn_nucleus/"+str(date)+pth_name+"/"
+    pth_path_cluster="/bigdata/casus/optima/hemera_results/maskrcnn_nucleus/"+str(date)+"/"+pth_name+"/"
     
     root_train=cluster_train
     root_test=cluster_test
