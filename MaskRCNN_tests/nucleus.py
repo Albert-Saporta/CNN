@@ -52,7 +52,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
 #@click.option('--path','-p', help='Input data', required=True,
               #type=click.Path(dir_okay=True,file_okay=False))
-@click.option('--n_epochs','-ne', help='pth name', required=True,
+@click.option('--n_epoch','-ne', help='pth name', required=True,
               type=click.Path(dir_okay=False,file_okay=False))
 @click.option('--date','-d', help='pth name', required=True,
               type=click.Path(dir_okay=False,file_okay=False))
@@ -60,10 +60,11 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
               type=click.Path(dir_okay=False,file_okay=False))
 
 
-def nucleus_click(n_epochs,date,pth_name):
-    nucleus(n_epochs,date,pth_name)
-def nucleus(n_epochs,date,pth_name):
+def nucleus_click(n_epoch,date,pth_name):
+    nucleus(n_epoch,date,pth_name)
+def nucleus(n_epoch,date,pth_name):
     #%% param
+    n_epochs=int(n_epoch)
     hidden_layer = 256
     lr=0.02
     batch_size=4
@@ -81,7 +82,7 @@ def nucleus(n_epochs,date,pth_name):
     
     root_train=cluster_test
     root_test=cluster_test
-    path_date_pth=pth_path_cluster+pth_name+"_"+n_epochs+"n_epochs"+"/"
+    path_date_pth=pth_path_cluster+pth_name+"_"+n_epoch+"epochs"+"/"
     path_figure=pth_path_cluster+pth_name+"/"+"figure/"
 
     if os.path.exists(pth_path_cluster)==True:
