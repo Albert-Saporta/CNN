@@ -19,7 +19,6 @@ from scipy.ndimage import label
 TRAIN_PATH="C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/stage1_test/"
 outpath="C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/test/mask/"
 
-import cv2
 seed = 42
 random.seed = seed
 np.random.seed = seed

@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms.functional as Ft
+from scipy.ndimage import label,binary_closing,find_objects
 
 import torchvision
 from torchvision import models
@@ -28,6 +29,8 @@ from d2l import torch as d2l
 import cv2
 import colorsys
 """
+import cv2
+
 from torchsummary import summary
 import random
 
@@ -70,7 +73,7 @@ cluster_test="/bigdata/casus/optima/data/cell_nucleus/test"
 pth_name="maskrcnn_nucleus"
 pth_path_cluster="/bigdata/casus/optima/hemera_results/"+pth_name+"/"
 
-root_train=cluster_train
+root_train=local_train
 root_test=cluster_test
 #%% function
 
@@ -329,8 +332,8 @@ dataset_train = NucleusCellDataset(root_train, transforms=torchvision.transforms
 #print(dataset_train[3][1])
 data_loader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True,collate_fn=lambda x:list(zip(*x)),pin_memory=True)
 #%% visu
-#images,labels=next(iter(data_loader_train))
-#view(images=images,labels=labels,n=2,std=1,mean=0)
+images,labels=next(iter(data_loader_train))
+view(images=images,labels=labels,n=2,std=1,mean=0)
 #%% model
 num_classes = 2
 # load an instance segmentation model pre-trained pre-trained on COCO
