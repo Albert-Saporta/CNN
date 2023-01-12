@@ -65,7 +65,7 @@ def nucleus_click(date,pth_name):
     nucleus(date,pth_name)
 def nucleus(date,pth_name):
     #%% param
-    n_epochs = 25
+    n_epochs = 2#25
     hidden_layer = 256
     lr=0.02
     batch_size=4
@@ -80,19 +80,26 @@ def nucleus(date,pth_name):
     cluster_test="/bigdata/casus/optima/data/cell_nucleus/test"
     
     #pth_name="maskrcnn_nucleus"
-    pth_path_cluster="/bigdata/casus/optima/hemera_results/maskrcnn_nucleus/"+str(date)+"/"+pth_name+"/"
+    pth_path_cluster="/bigdata/casus/optima/hemera_results/maskrcnn_nucleus/"+str(date)+"/"
     
-    root_train=cluster_train
+    root_train=cluster_test
     root_test=cluster_test
-    
+    path_date_pth=pth_path_cluster+pth_name+"/"
+    path_figure=pth_path_cluster+pth_name+"/"+"figure/"
+
     if os.path.exists(pth_path_cluster)==True:
         pass
     elif os.path.exists(pth_path_cluster)==False:
         os.mkdir(pth_path_cluster)
-    if os.path.exists(pth_path_cluster+"figure/")==True:
+    if os.path.exists(path_date_pth)==True:
         pass
-    elif os.path.exists(pth_path_cluster+"figure/")==False:
-        os.mkdir(pth_path_cluster+"figure/")
+    elif os.path.exists(path_date_pth)==False:
+        os.mkdir(path_date_pth)
+    if os.path.exists(path_figure)==True:
+        pass
+    elif os.path.exists(path_figure)==False:
+        os.mkdir(path_figure)
+  
     #%% function
     def view(images,labels,n=2,std=1,mean=0):
         figure = plt.figure(figsize=(15,10))
