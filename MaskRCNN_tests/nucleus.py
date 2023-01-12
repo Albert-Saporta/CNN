@@ -50,8 +50,9 @@ import click
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option('--path','-p', help='Input data', required=True,
-              type=click.Path(dir_okay=True,file_okay=False))
+
+#@click.option('--path','-p', help='Input data', required=True,
+              #type=click.Path(dir_okay=True,file_okay=False))
 @click.option('--date','-d', help='pth name', required=True,
               type=click.Path(dir_okay=False,file_okay=False))
 @click.option('--pth_name','-n', help='pth name', required=True,
