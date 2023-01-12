@@ -212,11 +212,11 @@ def nucleus(n_epoch,date,pth_name):
             # draw the bounding boxes around the objects
             cv2.rectangle(image,start_point ,end_point , color, thickness=2)
             # put the label text above the objects
-            """
-            cv2.putText(image , labels, (boxes[i][0][0], boxes[i][0][1]-10), 
+            
+            cv2.putText(image , labels, (boxes[i][0], boxes[i][1]-10), 
                         cv2.FONT_HERSHEY_SIMPLEX, 1, color, 
                         thickness=2, lineType=cv2.LINE_AA)
-            """
+            
     
         return image
     """
@@ -344,7 +344,7 @@ def nucleus(n_epoch,date,pth_name):
     # and replace the mask predictor with a new one
     model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,hidden_layer, num_classes)
     model=nn.DataParallel(model)
-    model=model.to(device)
+    #model=model.to(device)
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params, lr=lr, momentum=0.9, weight_decay=0.0005)
     

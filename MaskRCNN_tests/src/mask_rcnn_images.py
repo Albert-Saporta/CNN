@@ -12,6 +12,7 @@ import argparse
 from PIL import Image
 from utils import draw_segmentation_map, get_outputs
 from torchvision.transforms import transforms as transforms
+import numpy as np
 """
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', required=True, 
@@ -43,8 +44,10 @@ image = transform(image)
 # add a batch dimension
 image = image.unsqueeze(0).to(device)
 masks, boxes, labels = get_outputs(image, model, 0.965)
-print(orig_image, masks)
+boxes=np.array(boxes)
+print("labels",labels)#res=draw_segmentation_map(orig_image,boxes , "nucleus")
 
+print("boxes",boxes.shape)
 result = draw_segmentation_map(orig_image, masks, boxes, labels)
 # visualize the image
 cv2.imshow('Segmented image', result)

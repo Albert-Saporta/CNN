@@ -12,7 +12,13 @@ from torchvision.utils import draw_bounding_boxes,draw_segmentation_masks
 
 from torchvision.ops import masks_to_boxes
 from torchvision.io import read_image
-
+import torch
+import torchvision
+import cv2
+import argparse
+from PIL import Image
+from torchvision.transforms import transforms as transforms
+import numpy as np
 from d2l import torch as d2l
 import cv2
 import colorsys
@@ -33,6 +39,7 @@ import matplotlib.pyplot as plt
 #%matplotlib inline 
 from matplotlib.patches import Polygon
 from skimage.measure import find_contours
+from torchvision.transforms import transforms as transforms
 
 import matplotlib.patches as mpatches
 from matplotlib import patches
@@ -145,30 +152,72 @@ def get_outputs(image, model, threshold):
     # get the classes labels
     labels = ''#[coco_names[i] for i in outputs[0]['labels']]
     return masks, boxes, labels
-
+def random_colors(N, bright=True):
+    """
+    Generate random colors.
+    To get visually distinct colors, generate them in HSV space then
+    convert to RGB.
+    """
+    brightness = 1.0 if bright else 0.7
+    hsv = [(i / N, 1, brightness) for i in range(N)]
+    colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
+    random.shuffle(colors)
+    return colors
 def draw_segmentation_map(im, boxes, labels):
-    color=(255, 0, 0)
+    
     image = np.array(im)
-    print(boxes.shape)
+    N=boxes.shape[0]
 
     alpha = 1 
     beta = 0.6 # transparency for the segmentation map
     gamma = 0 # scalar added to each sum
-    for i in range(boxes.shape[0]):
+    colors=random_colors(N)
+    print(colors)
+    for i in range(N):
+        color=colors[i]
         start_point=(boxes[i][0],boxes[i][1])
         end_point =(boxes[i][2],boxes[i][3])
         #print(start_point,end_point)
         # draw the bounding boxes around the objects
         cv2.rectangle(image,start_point ,end_point , color, thickness=2)
         # put the label text above the objects
-        """
-        cv2.putText(image , labels, (boxes[i][0][0], boxes[i][0][1]-10), 
+        cv2.putText(image , labels, (boxes[i][0], boxes[i][1]-10), 
                     cv2.FONT_HERSHEY_SIMPLEX, 1, color, 
                     thickness=2, lineType=cv2.LINE_AA)
-        """
 
     return image
 
+def draw_mask_box_labels(image, masks, boxes, labels):
+    alpha = 1 
+    beta = 0.6 # transparency for the segmentation map
+    gamma = 0 # scalar added to each sum
+    COLORS = np.random.uniform(0, 255, size=(2, 3))
+
+    for i in range(len(masks)):
+        red_map = np.zeros_like(masks[i]).astype(np.uint8)
+        green_map = np.zeros_like(masks[i]).astype(np.uint8)
+        blue_map = np.zeros_like(masks[i]).astype(np.uint8)
+        # apply a randon color mask to each object
+        color = COLORS[random.randrange(0, len(COLORS))]
+        red_map[masks[i] == 1], green_map[masks[i] == 1], blue_map[masks[i] == 1]  = color
+        # combine all the masks into a single image
+        segmentation_map = np.stack([red_map, green_map, blue_map], axis=2)
+        print(segmentation_map.shape)
+        #convert the original PIL image into NumPy format
+        image = np.array(image)
+        # convert from RGN to OpenCV BGR format
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # apply mask on the image
+        cv2.addWeighted(image, alpha, segmentation_map, beta, gamma, image)
+        # draw the bounding boxes around the objects
+        cv2.rectangle(image, boxes[i][0], boxes[i][1], color=color, 
+                      thickness=2)
+        # put the label text above the objects
+        cv2.putText(image , labels, (boxes[i][0][0], boxes[i][0][1]-10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, color, 
+                    thickness=2, lineType=cv2.LINE_AA)
+    
+    return image
 
 #%%% dataset     
 class NucleusCellDataset(object):
@@ -231,39 +280,56 @@ class NucleusCellDataset(object):
     def __len__(self):
         return len(self.imgs)
 #%% test dataset
+"""
 dataset_train = NucleusCellDataset(root_train, transforms=torchvision.transforms.ToTensor()) # get_transform(train=True)
 data_loader_train = DataLoader(dataset_train, batch_size=4, shuffle=True,collate_fn=lambda x:list(zip(*x)),pin_memory=True)
 images,labels=next(iter(data_loader_train))
-
+"""
 
 #%% tests 1 image
-"""
+
 local_train = "C:/Users/alber/Bureau/Development/Data/Images_data/cell_nucleus/train"
 image_path=local_train+"/image/"+"00ae65c1c6631ae6f2be1a449902976e6eb8483bf6b0740d00530220832c6d3e.png"
 mask_path=local_train+"/mask/"+"00ae65c1c6631ae6f2be1a449902976e6eb8483bf6b0740d00530220832c6d3e.jpg"
 local_train = "C:/Users/alber/Bureau/"
-image_path=local_train+"train_1.png"
-mask_path=local_train+"train_1_anno.png"
+#image_path=local_train+"train_1.png"
+#mask_path=local_train+"train_1_anno.png"
 
-image = read_image(image_path)#[[0,1,3],:,:]
-mask = read_image(mask_path)
-#mask=torchvision.transforms.transforms.Grayscale(num_output_channels=1)(mask)
-print(mask.size(),image.size())
+pth_path="C:/Users/alber/Bureau/Development/DeepLearning/training_results/cluster/maskrcnn/nucleus/12_01/test/test.pth"
+device = torch.device('cuda')
 
-obj_ids = torch.unique(mask)
+#%%% Model
+num_classes = 2
+# load an instance segmentation model pre-trained pre-trained on COCO
+model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(weights=None)
 
-# first id is the background, so remove it.
-obj_ids = obj_ids[1:]
+# get number of input features for the classifier
+in_features = model.roi_heads.box_predictor.cls_score.in_features
+# replace the pre-trained head with a new one
+model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+# now get the number of input features for the mask classifier
+in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
+# and replace the mask predictor with a new one
+model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,256, num_classes)
 
-# split the color-encoded mask into a set of boolean masks.
-# Note that this snippet would work as well if the masks were float values instead of ints.
-masks = mask == obj_ids[:, None, None]
-print(masks.size())
+#model=model.to(device)
+# load the modle on to the computation device and set to eval mode
+model.load_state_dict(torch.load(pth_path))
+#model=model.double()
+model.to(device).eval()
 
-boxes=masks_to_boxes(masks)
+# transform to convert the image to tensor
+transform = transforms.Compose([transforms.ToTensor()])
 
-imgtest=draw_bounding_boxes(image,boxes)
-imgtest = torchvision.transforms.ToPILImage()(imgtest)
-plt.imshow(imgtest)
-plt.show()
-"""
+image = Image.open(image_path).convert('RGB')
+orig_image = image.copy()
+# transform the image
+image = transform(image)
+image = image.unsqueeze(0).to(device)
+# add a batch dimension
+masks, boxes, labels = get_outputs(image, model, 0.1)
+print("test",labels)#res=draw_segmentation_map(orig_image,boxes , "nucleus")
+result = draw_mask_box_labels(orig_image, masks, boxes, "nucleus")
+# visualize the image
+cv2.imshow('Segmented image', result)
+cv2.waitKey(0)

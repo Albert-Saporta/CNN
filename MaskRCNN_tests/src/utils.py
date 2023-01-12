@@ -42,6 +42,8 @@ def draw_segmentation_map(image, masks, boxes, labels):
     alpha = 1 
     beta = 0.6 # transparency for the segmentation map
     gamma = 0 # scalar added to each sum
+    COLORS = np.random.uniform(0, 255, size=(2, 3))
+
     for i in range(len(masks)):
         red_map = np.zeros_like(masks[i]).astype(np.uint8)
         green_map = np.zeros_like(masks[i]).astype(np.uint8)
