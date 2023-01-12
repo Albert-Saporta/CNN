@@ -117,7 +117,7 @@ def nucleus(date,pth_name):
             l[:,3]=l[:,3]-l[:,1]
             for j in range(len(l)):
                 ax.add_patch(patches.Rectangle((l[j][0],l[j][1]),l[j][2],l[j][3],linewidth=1.5,edgecolor='r',facecolor='none')) 
-            plt.savefig(pth_path_cluster+'figure/images_test.pdf',format='pdf')
+            plt.savefig(path_figure+'images_test.pdf',format='pdf')
             
     def view_mask(targets, output, n=2, cmap='Greys'):
         figure = plt.figure(figsize=(15,10))
@@ -146,7 +146,7 @@ def nucleus(date,pth_name):
           output_im[output_im<0.5] = 0
           ax = figure.add_subplot(2,2, i+3)
           ax.imshow(output_im, cmap=cmap)
-        plt.savefig(pth_path_cluster+'figure/mask_test.pdf',format='pdf')
+        plt.savefig(path_figure+'mask_test.pdf',format='pdf')
     
     def IoU(y_real, y_pred):
       # Intersection over Union loss function
@@ -372,7 +372,7 @@ def nucleus(date,pth_name):
         print("Average loss for epoch = {:.4f} ".format(loss_epoch_mean))
     
     #model_nr = latest_model() + 1
-    save_path = pth_path_cluster+pth_name+".pth"#"C:/Users/alber/Bureau/Development/"
+    save_path = path_date_pth+pth_name+".pth"#"C:/Users/alber/Bureau/Development/"
     torch.save(model.state_dict(), save_path)
     
     #%% evaluation
@@ -382,7 +382,7 @@ def nucleus(date,pth_name):
     plt.legend()
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.savefig(pth_path_cluster+'figure/Learning_Curves.pdf',format='pdf')
+    plt.savefig(path_figure+'Learning_Curves.pdf',format='pdf')
     #%%% test data
     dataset_test = NucleusCellDataset(root_test, transforms=torchvision.transforms.ToTensor()) # get_transform(train=True)
     data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=2, shuffle=False,collate_fn=lambda x:list(zip(*x)))
@@ -502,7 +502,7 @@ def nucleus(date,pth_name):
     # im_new = np.concatenate((im, im2)) 
     im[im>0.5] = 1
     im[im<0.5] = 0
-    plt.savefig(pth_path_cluster+'figure/masks_finaux.pdf',format='pdf')
+    plt.savefig(path_figure+'figure/masks_finaux.pdf',format='pdf')
     #plt.imshow(im, cmap='Greys')
     # outputs[0]['masks']
     
