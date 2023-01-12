@@ -325,7 +325,7 @@ def nucleus(n_epoch,date,pth_name):
             return len(self.imgs)
     #%% dataset
     dataset_train = NucleusCellDataset(root_train, transforms=torchvision.transforms.ToTensor()) # get_transform(train=True)
-    data_loader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True,collate_fn=lambda x:list(zip(*x)),pin_memory=True)
+    data_loader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True,collate_fn=lambda x:list(zip(*x)),pin_memory=True,num_workers =4)
     #%% visu
     #images,labels=next(iter(data_loader_train))
     #view(images=images,labels=labels,n=2,std=1,mean=0)
@@ -344,7 +344,6 @@ def nucleus(n_epoch,date,pth_name):
     # and replace the mask predictor with a new one
     model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,hidden_layer, num_classes)
     model=nn.DataParallel(model)
-
     model=model.to(device)
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params, lr=lr, momentum=0.9, weight_decay=0.0005)
