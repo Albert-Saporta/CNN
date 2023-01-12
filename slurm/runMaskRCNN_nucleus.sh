@@ -24,5 +24,5 @@ module load python/3.9.6
 
 
 # Execute your code
-python /bigdata/casus/optima/scripts/CNN/MaskRCNN_tests/nucleus.py -d "12_01" -n "test"
+python /bigdata/casus/optima/scripts/CNN/MaskRCNN_tests/nucleus.py -ne 2 -d "12_01" -n "test"
 

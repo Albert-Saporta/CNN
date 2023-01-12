@@ -50,26 +50,23 @@ import click
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
-
 #@click.option('--path','-p', help='Input data', required=True,
               #type=click.Path(dir_okay=True,file_okay=False))
+@click.option('--n_epochs','-ne', help='pth name', required=True,
+              type=click.Path(dir_okay=False,file_okay=False))
 @click.option('--date','-d', help='pth name', required=True,
               type=click.Path(dir_okay=False,file_okay=False))
 @click.option('--pth_name','-n', help='pth name', required=True,
               type=click.Path(dir_okay=False,file_okay=False))
 
 
-
-
-def nucleus_click(date,pth_name):
-    nucleus(date,pth_name)
-def nucleus(date,pth_name):
+def nucleus_click(n_epochs,date,pth_name):
+    nucleus(n_epochs,date,pth_name)
+def nucleus(n_epochs,date,pth_name):
     #%% param
-    n_epochs = 2#25
     hidden_layer = 256
     lr=0.02
     batch_size=4
-    
     device = torch.device('cuda')
     image_size=600
     
@@ -84,7 +81,7 @@ def nucleus(date,pth_name):
     
     root_train=cluster_test
     root_test=cluster_test
-    path_date_pth=pth_path_cluster+pth_name+"/"
+    path_date_pth=pth_path_cluster+pth_name+"_"+n_epochs+"n_epochs"+"/"
     path_figure=pth_path_cluster+pth_name+"/"+"figure/"
 
     if os.path.exists(pth_path_cluster)==True:
@@ -502,7 +499,7 @@ def nucleus(date,pth_name):
     # im_new = np.concatenate((im, im2)) 
     im[im>0.5] = 1
     im[im<0.5] = 0
-    plt.savefig(path_figure+'figure/masks_finaux.pdf',format='pdf')
+    plt.savefig(path_figure+'masks_finaux.pdf',format='pdf')
     #plt.imshow(im, cmap='Greys')
     # outputs[0]['masks']
     
