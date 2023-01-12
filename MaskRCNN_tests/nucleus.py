@@ -61,9 +61,9 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 
-def nucleus_click(path,date,pth_name):
-    nucleus(path,date,pth_name)
-def nucleus(path,date,pth_name):
+def nucleus_click(date,pth_name):
+    nucleus(date,pth_name)
+def nucleus(date,pth_name):
     #%% param
     n_epochs = 25
     hidden_layer = 256
