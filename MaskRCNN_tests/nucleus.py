@@ -365,7 +365,7 @@ def nucleus(path,date,pth_name):
         print("Average loss for epoch = {:.4f} ".format(loss_epoch_mean))
     
     #model_nr = latest_model() + 1
-    save_path = pth_path_cluster+"maskrcnn.pth"#"C:/Users/alber/Bureau/Development/"
+    save_path = pth_path_cluster+pth_name+".pth"#"C:/Users/alber/Bureau/Development/"
     torch.save(model.state_dict(), save_path)
     
     #%% evaluation
